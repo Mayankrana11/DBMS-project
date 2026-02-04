@@ -103,8 +103,8 @@ The UI serves as a demonstration layer and is not the primary focus of the proje
 ## Project Status
 
 - Task 1: Business Requirements and Scope – Completed  
-- Task 2: ER Diagram and Relational Model – In Progress  
-- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Upcoming  
+- Task 2: ER Diagram and Relational Model – Completed 
+- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Completed Task 3
 
 ---
 
