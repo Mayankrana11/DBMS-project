@@ -12,6 +12,7 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=yourpassword
 DB_NAME=RideManagementDB
+JWT_SECRET=supersecretkey123
 
 API CALLS:
 http://localhost:5000/api/users 
