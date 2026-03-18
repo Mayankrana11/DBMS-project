@@ -3,6 +3,7 @@ INSTALL DEPENDENCIES
 npm init -y
 npm install express mysql2 dotenv cors
 npm install nodemon --save-dev
+npm install jsonwebtoken
 
 CREATE .ENV
 
