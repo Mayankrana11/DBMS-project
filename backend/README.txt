@@ -19,3 +19,6 @@ http://localhost:5000/api/users
 http://localhost:5000/api/drivers
 http://localhost:5000/api/drivers/available
 POST http://localhost:5000/api/rides/book
+
+AUTH CALL: 
+POST /api/auth/login
