@@ -20,12 +20,12 @@ exports.createRide = async (pickup, drop_off, user_id) => {
     // 2. Generate ride id
     const ride_id = Math.floor(Math.random() * 10000);
 
-    // 3. Create ride
+    // 3. Create ride WITH user_id + driver_id
     await connection.query(
       `INSERT INTO RIDE 
-       (ride_id, ride_status, pickup, current_location, drop_off, dist_km, fare_amt)
-       VALUES (?, 'ongoing', ?, ?, ?, ?, ?)`,
-      [ride_id, pickup, pickup, drop_off, 10, 200]
+      (ride_id, user_id, driver_id, ride_status, pickup, current_location, drop_off, dist_km, fare_amt)
+      VALUES (?, ?, ?, 'ongoing', ?, ?, ?, ?, ?)`,
+      [ride_id, user_id, driver.driver_id, pickup, pickup, drop_off, 10, 200]
     );
 
     // 4. Update driver status
@@ -34,9 +34,23 @@ exports.createRide = async (pickup, drop_off, user_id) => {
       [driver.driver_id]
     );
 
+    // 5. (OPTIONAL BUT VERY GOOD) Create payment entry
+    const payment_id = Math.floor(Math.random() * 10000);
+
+    await connection.query(
+      `INSERT INTO PAYMENT (payment_id, ride_id, amount, payment_status)
+       VALUES (?, ?, ?, 'pending')`,
+      [payment_id, ride_id, 200]
+    );
+
     await connection.commit();
 
-    return { ride_id, driver };
+    return {
+      ride_id,
+      driver_id: driver.driver_id,
+      user_id
+    };
+
   } catch (err) {
     await connection.rollback();
     throw err;
