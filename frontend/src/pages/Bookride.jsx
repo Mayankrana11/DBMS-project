@@ -18,7 +18,6 @@ function BookRide() {
       const res = await bookRide(token, {
         pickup: pickup.trim(),
         drop_off: drop.trim(),
-        user_id: 125,
       });
 
    
@@ -28,7 +27,7 @@ function BookRide() {
       }
 
   
-      alert("Ride booked successfully 🚗");
+      alert(`Ride ID: ${res.data.ride_id}, Driver: ${res.data.driver_id}`);
 
       
       setPickup("");
