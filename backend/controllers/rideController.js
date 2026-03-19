@@ -2,8 +2,11 @@ const rideService = require("../services/rideService");
 
 exports.bookRide = async (req, res) => {
   try {
-    const { pickup, drop_off, user_id } = req.body;
-    
+    const { pickup, drop_off } = req.body;
+
+    // 🔥 Extract user from JWT
+    const user_id = req.user.id;
+
     if (
       !pickup ||
       !drop_off ||
@@ -17,14 +20,6 @@ exports.bookRide = async (req, res) => {
       });
     }
 
-  
-    if (!user_id || isNaN(user_id)) {
-      return res.status(400).json({
-        error: "Valid user ID is required",
-      });
-    }
-
-  
     const result = await rideService.createRide(
       pickup.trim(),
       drop_off.trim(),
