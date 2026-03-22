@@ -1,5 +1,7 @@
 -- Triggers
 
+DROP TRIGGER IF EXISTS after_ride_complete;
+
 DELIMITER $$
 
 CREATE TRIGGER after_ride_complete
