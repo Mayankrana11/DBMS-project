@@ -7,8 +7,14 @@ const rideService = require("../services/rideService");
 */
 exports.bookRide = async (req, res) => {
   try {
-    const { pickup, drop_off } = req.body;
+    // 🔥 BLOCK DRIVER
+    if (req.user.role !== "user") {
+      return res.status(403).json({
+        error: "Only users can book rides",
+      });
+    }
 
+    const { pickup, drop_off } = req.body;
     const user_id = req.user.id;
 
     if (
