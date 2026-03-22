@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
 
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  window.location.href = "/";
+};
+
 function DriverDashboard() {
   const [rides, setRides] = useState([]);
 
@@ -118,6 +124,9 @@ function DriverDashboard() {
       <h2>🚗 Driver Dashboard</h2>
 
       <h3>Driver ID: {driverId}</h3>
+      <button onClick={handleLogout} style={{ marginBottom: "20px" }}>
+        Logout
+      </button>
 
       {rides.length === 0 ? (
         <p>No rides available</p>
