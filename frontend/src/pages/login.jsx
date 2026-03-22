@@ -16,7 +16,19 @@ export default function Login({ setLoggedIn }) {
 
       if (res.token) {
         localStorage.setItem("token", res.token);
+        localStorage.setItem("role", type); // 🔥 IMPORTANT
+
         setLoggedIn(true);
+
+        // 🔥 REDIRECT BASED ON ROLE
+        if (type === "driver") {
+          window.location.href = "/driver-dashboard";
+        } else if (type === "user") {
+          window.location.href = "/book-ride";
+        } else {
+          window.location.href = "/";
+        }
+
       } else {
         alert("Login failed");
       }
@@ -41,6 +53,7 @@ export default function Login({ setLoggedIn }) {
         >
           <option value="user">User</option>
           <option value="employee">Employee</option>
+          <option value="driver">Driver</option>
         </select>
 
         {/* Username */}
