@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
+import DriverDashboard from "./pages/DriverDashboard";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(
