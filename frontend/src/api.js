@@ -6,7 +6,10 @@ export const login = async (data) => {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      type: data.type === "driver" ? "employee" : data.type, // 🔥 FIX
+    }),
   });
 
   return res.json();
@@ -17,7 +20,7 @@ export const bookRide = async (token, data) => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": token,
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
