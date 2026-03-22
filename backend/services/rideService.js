@@ -59,12 +59,20 @@ exports.getRequestedRides = async (driver_id) => {
     `SELECT r.*, u.fname, u.lname
      FROM RIDE r
      JOIN USER u ON r.user_id = u.user_id
-     WHERE r.ride_status = 'requested'
-     AND EXISTS (
-        SELECT 1 FROM DRIVER d
-        WHERE d.driver_id = ? AND d.availability_status = 'available'
-     )`,
-    [driver_id]
+     WHERE 
+        (
+          r.ride_status = 'requested'
+          AND EXISTS (
+            SELECT 1 FROM DRIVER d
+            WHERE d.driver_id = ? AND d.availability_status = 'available'
+          )
+        )
+        OR
+        (
+          r.ride_status = 'ongoing'
+          AND r.driver_id = ?
+        )`,
+    [driver_id, driver_id]
   );
 
   return rows;
