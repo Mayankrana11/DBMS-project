@@ -85,10 +85,12 @@ CREATE TABLE USER (
     email_phn VARCHAR(50),
     FOREIGN KEY (ride_status) REFERENCES RIDE(ride_status)
 );
+CREATE INDEX idx_ride_id ON RIDE(ride_id);
 
+ALTER TABLE USER DROP COLUMN ride_status;
+ALTER TABLE USER DROP FOREIGN KEY user_ibfk_1;
 DESCRIBE user;
 
-CREATE INDEX idx_ride_id ON RIDE(ride_id);
 
 CREATE TABLE PAYMENT (
     payment_id INT PRIMARY KEY,
@@ -232,6 +234,36 @@ SELECT * FROM USER;
 SELECT * FROM PAYMENT;
 SELECT * FROM ACCOUNT;
 SELECT * FROM RATING;
+
+-- testing cases and updating
+
+SET SQL_SAFE_UPDATES = 0; -- off
+SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_SAFE_UPDATES = 1; -- on
+SET FOREIGN_KEY_CHECKS = 1;
+DELETE FROM RIDE WHERE ride_id = 2513;
+DELETE FROM RIDE WHERE ride_id = 7980;
+
+SHOW TRIGGERS;
+
+SELECT ride_status FROM RIDE WHERE ride_id = 3754;
+
+
+UPDATE DRIVER 
+SET availability_status = 'available'
+WHERE driver_id = 2;
+
+UPDATE DRIVER 
+SET availability_status = 'available'
+WHERE driver_id = 4;
+
+ALTER TABLE RIDE 
+ADD user_id INT,
+ADD driver_id INT;
+
+ALTER TABLE RIDE
+ADD FOREIGN KEY (user_id) REFERENCES USER(user_id),
+ADD FOREIGN KEY (driver_id) REFERENCES DRIVER(driver_id);
 
 
 SHOW TABLES;
@@ -464,3 +496,42 @@ HAVING d.rating_avg > (
     SELECT AVG(rating_avg)
     FROM DRIVER
 );
+
+-- Triggers
+
+DROP TRIGGER IF EXISTS after_ride_complete;
+
+DELIMITER $$
+
+CREATE TRIGGER after_ride_complete
+AFTER UPDATE ON RIDE
+FOR EACH ROW
+BEGIN
+    IF NEW.ride_status = 'completed' THEN
+        UPDATE DRIVER
+        SET availability_status = 'available'
+        WHERE driver_id = NEW.driver_id;
+    END IF;
+END$$
+
+SELECT ride_id, driver_id, ride_status FROM RIDE WHERE ride_id = 3754;
+
+SHOW TRIGGERS;
+
+DELIMITER $$
+
+CREATE TRIGGER after_payment_success
+AFTER UPDATE ON PAYMENT
+FOR EACH ROW
+BEGIN
+    IF NEW.payment_status = 'success' THEN
+        UPDATE ACCOUNT
+        SET balance = balance - NEW.amount
+        WHERE user_id = (
+            SELECT user_id FROM RIDE WHERE ride_id = NEW.ride_id
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
