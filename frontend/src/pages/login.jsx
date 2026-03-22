@@ -16,19 +16,9 @@ export default function Login({ setLoggedIn }) {
 
       if (res.token) {
         localStorage.setItem("token", res.token);
-        localStorage.setItem("role", type); // 🔥 IMPORTANT
+        localStorage.setItem("role", type);
 
-        setLoggedIn(true);
-
-        // 🔥 REDIRECT BASED ON ROLE
-        if (type === "driver") {
-          window.location.href = "/driver-dashboard";
-        } else if (type === "user") {
-          window.location.href = "/book-ride";
-        } else {
-          window.location.href = "/";
-        }
-
+        setLoggedIn(true); // 🔥 THIS triggers App.jsx rerender
       } else {
         alert("Login failed");
       }
