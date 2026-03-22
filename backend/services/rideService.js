@@ -11,9 +11,20 @@ exports.createRide = async (pickup, drop_off, user_id) => {
   try {
     await connection.beginTransaction();
 
+    // 🔥 FIX 3: CHECK IF USER EXISTS
+    const [users] = await connection.query(
+      "SELECT * FROM USER WHERE user_id = ?",
+      [user_id]
+    );
+
+    if (users.length === 0) {
+      throw new Error("Invalid user_id");
+    }
+
+    // 1. Generate ride id
     const ride_id = Math.floor(Math.random() * 10000);
 
-    // 🔥 No driver assignment here
+    // 2. Insert ride (requested, no driver yet)
     await connection.query(
       `INSERT INTO RIDE 
       (ride_id, ride_status, pickup, current_location, drop_off, dist_km, fare_amt, user_id, driver_id)
@@ -25,7 +36,8 @@ exports.createRide = async (pickup, drop_off, user_id) => {
 
     return {
       ride_id,
-      message: "Waiting for driver to accept..."
+      user_id,
+      message: "Ride requested, waiting for driver"
     };
 
   } catch (err) {
