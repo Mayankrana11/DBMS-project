@@ -54,12 +54,17 @@ exports.createRide = async (pickup, drop_off, user_id) => {
 2. DRIVER: VIEW REQUESTED RIDES
 ========================================
 */
-exports.getRequestedRides = async () => {
+exports.getRequestedRides = async (driver_id) => {
   const [rows] = await db.query(
     `SELECT r.*, u.fname, u.lname
      FROM RIDE r
      JOIN USER u ON r.user_id = u.user_id
-     WHERE r.ride_status IN ('requested', 'ongoing')`
+     WHERE r.ride_status = 'requested'
+     AND EXISTS (
+        SELECT 1 FROM DRIVER d
+        WHERE d.driver_id = ? AND d.availability_status = 'available'
+     )`,
+    [driver_id]
   );
 
   return rows;
@@ -77,7 +82,21 @@ exports.acceptRide = async (ride_id, driver_id) => {
   try {
     await connection.beginTransaction();
 
-    // Assign driver + start ride
+    // 🔥 CHECK DRIVER AVAILABILITY (ADD HERE)
+    const [driver] = await connection.query(
+      "SELECT availability_status FROM DRIVER WHERE driver_id=?",
+      [driver_id]
+    );
+
+    if (driver.length === 0) {
+      throw new Error("Driver not found");
+    }
+
+    if (driver[0].availability_status !== "available") {
+      throw new Error("Driver is already busy");
+    }
+
+    // 🔥 Assign driver + start ride
     await connection.query(
       `UPDATE RIDE 
        SET driver_id = ?, ride_status = 'ongoing'
@@ -85,13 +104,13 @@ exports.acceptRide = async (ride_id, driver_id) => {
       [driver_id, ride_id]
     );
 
-    // Mark driver busy
+    // 🔥 Mark driver busy
     await connection.query(
       `UPDATE DRIVER SET availability_status='busy' WHERE driver_id=?`,
       [driver_id]
     );
 
-    // Create payment
+    // 🔥 Create payment
     const payment_id = Math.floor(Math.random() * 10000);
 
     await connection.query(
@@ -130,7 +149,9 @@ exports.completeRide = async (ride_id) => {
 
     // Complete ride
     await connection.query(
-      `UPDATE RIDE SET ride_status='completed' WHERE ride_id=?`,
+      `UPDATE RIDE 
+      SET ride_status = 'completed', current_location = current_location
+      WHERE ride_id = ?`,
       [ride_id]
     );
 
