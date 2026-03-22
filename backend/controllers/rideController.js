@@ -7,7 +7,7 @@ const rideService = require("../services/rideService");
 */
 exports.bookRide = async (req, res) => {
   try {
-    // 🔥 BLOCK DRIVER
+    // Only users can book rides
     if (req.user.role !== "user") {
       return res.status(403).json({
         error: "Only users can book rides",
@@ -55,8 +55,19 @@ exports.bookRide = async (req, res) => {
 */
 exports.getRequestedRides = async (req, res) => {
   try {
-    const rides = await rideService.getRequestedRides();
+    // Only drivers
+    if (req.user.role !== "employee") {
+      return res.status(403).json({
+        error: "Only drivers can view rides",
+      });
+    }
+
+    const driver_id = req.user.id;
+
+    const rides = await rideService.getRequestedRides(driver_id);
+
     res.json(rides);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -75,8 +86,11 @@ exports.acceptRide = async (req, res) => {
     if (!ride_id) {
       return res.status(400).json({ error: "ride_id is required" });
     }
+
     if (req.user.role !== "employee") {
-      return res.status(403).json({ error: "Only drivers can accept rides" });
+      return res.status(403).json({
+        error: "Only drivers can accept rides",
+      });
     }
 
     const driver_id = req.user.id;
@@ -103,10 +117,12 @@ exports.completeRide = async (req, res) => {
     if (!ride_id) {
       return res.status(400).json({ error: "ride_id is required" });
     }
-    if (req.user.role !== "employee") {
-      return res.status(403).json({ error: "Only drivers can complete rides" });
-    }
 
+    if (req.user.role !== "employee") {
+      return res.status(403).json({
+        error: "Only drivers can complete rides",
+      });
+    }
 
     const result = await rideService.completeRide(ride_id);
 
@@ -130,10 +146,12 @@ exports.cancelRide = async (req, res) => {
     if (!ride_id) {
       return res.status(400).json({ error: "ride_id is required" });
     }
-    if (req.user.role !== "employee") {
-      return res.status(403).json({ error: "Only drivers can cancel rides" });
-    }
 
+    if (req.user.role !== "employee") {
+      return res.status(403).json({
+        error: "Only drivers can cancel rides",
+      });
+    }
 
     const result = await rideService.cancelRide(ride_id);
 
