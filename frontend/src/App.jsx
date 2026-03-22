@@ -8,14 +8,18 @@ function App() {
     !!localStorage.getItem("token")
   );
 
+  const role = localStorage.getItem("role");
+
   return (
     <div>
       <h1>Ride Management System</h1>
 
-      {loggedIn ? (
-        <Dashboard setLoggedIn={setLoggedIn} />
-      ) : (
+      {!loggedIn ? (
         <Login setLoggedIn={setLoggedIn} />
+      ) : role === "driver" ? (
+        <DriverDashboard setLoggedIn={setLoggedIn} />
+      ) : (
+        <Dashboard setLoggedIn={setLoggedIn} />
       )}
     </div>
   );
