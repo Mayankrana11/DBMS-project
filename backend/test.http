@@ -1,8 +1,9 @@
-POST http://localhost:5000/api/auth/login
+### LOGIN
+### COMPLETE RIDE
+POST http://localhost:5000/api/rides/complete
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTI1LCJyb2xlIjoidXNlciIsImlhdCI6MTc3MzkxMjQ0MiwiZXhwIjoxNzczOTE5NjQyfQ.LJ7R9aDA0AMhm5mwhzr-mxXqP_4ulVyuX5Xo3v0RgvQ
 
 {
-  "type": "user",
-  "username": "userRahulVerma",
-  "password": "RahulVerma"
+  "ride_id": 271
 }
