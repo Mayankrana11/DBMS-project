@@ -21,16 +21,19 @@ exports.createRide = async (pickup, drop_off, user_id) => {
       throw new Error("Invalid user_id");
     }
 
-    // 1. Generate ride id
-    const ride_id = Math.floor(Math.random() * 10000);
-
-    // 2. Insert ride (requested, no driver yet)
+    // Insert ride (requested, no driver yet)
     await connection.query(
       `INSERT INTO RIDE 
-      (ride_id, ride_status, pickup, current_location, drop_off, dist_km, fare_amt, user_id, driver_id)
-      VALUES (?, 'requested', ?, ?, ?, ?, ?, ?, NULL)`,
-      [ride_id, pickup, pickup, drop_off, 10, 200, user_id]
+      (ride_status, pickup, current_location, drop_off, dist_km, fare_amt, user_id, driver_id)
+      VALUES ('requested', ?, ?, ?, ?, ?, ?, NULL)`,
+      [pickup, pickup, drop_off, 10, 200, user_id]
     );
+
+    const [[ride]] = await connection.query(
+      "SELECT LAST_INSERT_ID() AS ride_id"
+    );
+
+    const ride_id = ride.ride_id;
 
     await connection.commit();
 
@@ -104,27 +107,23 @@ exports.acceptRide = async (ride_id, driver_id) => {
       throw new Error("Driver is already busy");
     }
 
-    // 🔥 Assign driver + start ride
-    await connection.query(
+    // Assign driver + start ride
+    const [result] = await connection.query(
       `UPDATE RIDE 
-       SET driver_id = ?, ride_status = 'ongoing'
-       WHERE ride_id = ?`,
+      SET driver_id = ?, ride_status = 'ongoing'
+      WHERE ride_id = ? AND ride_status = 'requested'`,
       [driver_id, ride_id]
     );
+
+    // If no rows updated → someone already accepted
+    if (result.affectedRows === 0) {
+      throw new Error("Ride already accepted by another driver");
+    }
 
     // 🔥 Mark driver busy
     await connection.query(
       `UPDATE DRIVER SET availability_status='busy' WHERE driver_id=?`,
       [driver_id]
-    );
-
-    // 🔥 Create payment
-    const payment_id = Math.floor(Math.random() * 10000);
-
-    await connection.query(
-      `INSERT INTO PAYMENT (payment_id, ride_id, amount, payment_status)
-       VALUES (?, ?, ?, 'pending')`,
-      [payment_id, ride_id, 200]
     );
 
     await connection.commit();
