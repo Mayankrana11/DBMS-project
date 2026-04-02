@@ -6,13 +6,7 @@ npm install nodemon --save-dev
 npm install jsonwebtoken
 
 AUTH CREDENTIALS LOGIC:
-1) user : (125, 'completed', 'Rahul', NULL, 'Verma', ...) // user<first_name> ,<last_name>
-Username: Rahul
-Password: Verma
-
-2) employee : (1, '2026-01-10', 'Mayank', ...) // <employee_id>, <joining_date in YYYYMMDD>
-Username: 1
-Password: 20260110
+visit database line 250 - 262 to understand user and employee logins also visit line 132 for auth table schema
 
 CREATE .ENV
 
