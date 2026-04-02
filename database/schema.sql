@@ -112,3 +112,11 @@ CREATE TABLE RATING (
     FOREIGN KEY (driver_id) REFERENCES DRIVER(driver_id),
     FOREIGN KEY (user_id) REFERENCES USER(user_id)
 );
+
+CREATE TABLE AUTH (
+    auth_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    password VARCHAR(100),
+    role VARCHAR(20),
+    linked_id INT
+);
