@@ -54,9 +54,10 @@ exports.bookRide = async (req, res) => {
 ========================================
 */
 exports.getRequestedRides = async (req, res) => {
+  console.log("JWT USER:", req.user);
   try {
     // Only drivers
-    if (req.user.role !== "employee") {
+    if (req.user.role !== "driver") {
       return res.status(403).json({
         error: "Only drivers can view rides",
       });
@@ -87,7 +88,7 @@ exports.acceptRide = async (req, res) => {
       return res.status(400).json({ error: "ride_id is required" });
     }
 
-    if (req.user.role !== "employee") {
+    if (req.user.role !== "driver") {
       return res.status(403).json({
         error: "Only drivers can accept rides",
       });
@@ -118,7 +119,7 @@ exports.completeRide = async (req, res) => {
       return res.status(400).json({ error: "ride_id is required" });
     }
 
-    if (req.user.role !== "employee") {
+    if (req.user.role !== "driver") {
       return res.status(403).json({
         error: "Only drivers can complete rides",
       });
@@ -147,7 +148,7 @@ exports.cancelRide = async (req, res) => {
       return res.status(400).json({ error: "ride_id is required" });
     }
 
-    if (req.user.role !== "employee") {
+    if (req.user.role !== "driver") {
       return res.status(403).json({
         error: "Only drivers can cancel rides",
       });
