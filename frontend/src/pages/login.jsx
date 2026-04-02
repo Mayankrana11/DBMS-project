@@ -15,10 +15,14 @@ export default function Login({ setLoggedIn }) {
       });
 
       if (res.token) {
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("role", type);
+        console.log("LOGIN RESPONSE:", res); // DEBUG
 
-        setLoggedIn(true); // 🔥 THIS triggers App.jsx rerender
+        localStorage.setItem("token", res.token);
+
+        // use backend role
+        localStorage.setItem("role", res.role);
+
+        setLoggedIn(true);
       } else {
         alert("Login failed");
       }
@@ -34,22 +38,10 @@ export default function Login({ setLoggedIn }) {
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
           Ride App Login 🚗
         </h2>
-
-        {/* Select Login Type */}
-        <select
-          className="input"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-        >
-          <option value="user">User</option>
-          <option value="employee">Employee</option>
-          <option value="driver">Driver</option>
-        </select>
-
         {/* Username */}
         <input
           className="input"
-          placeholder="Username (First Name)"
+          placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
@@ -58,7 +50,7 @@ export default function Login({ setLoggedIn }) {
         <input
           className="input"
           type="password"
-          placeholder="Password (Last Name)"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
