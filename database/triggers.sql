@@ -35,3 +35,15 @@ END$$
 
 DELIMITER ;
 
+
+DELIMITER $$
+
+CREATE TRIGGER create_payment_after_ride
+AFTER INSERT ON RIDE
+FOR EACH ROW
+BEGIN
+    INSERT INTO PAYMENT (ride_id, amount, payment_status)
+    VALUES (NEW.ride_id, NEW.fare_amt, 'pending');
+END$$
+
+DELIMITER ;
