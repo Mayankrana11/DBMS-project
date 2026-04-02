@@ -104,7 +104,7 @@ The UI serves as a demonstration layer and is not the primary focus of the proje
 
 - Task 1: Business Requirements and Scope – Completed  
 - Task 2: ER Diagram and Relational Model – Completed 
-- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Completed Task 4
+- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Completed Task 5 Triggers
 
 ---
 

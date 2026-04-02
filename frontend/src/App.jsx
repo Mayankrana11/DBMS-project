@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import DriverDashboard from "./pages/DriverDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 // TEMP ADMIN PAGE
 function AdminPage({ setLoggedIn }) {
@@ -41,6 +42,8 @@ function App() {
         <DriverDashboard setLoggedIn={setLoggedIn} />
       ) : role === "user" ? (
         <Dashboard setLoggedIn={setLoggedIn} />
+      ) : role === "manager" ? (
+        <AdminDashboard setLoggedIn={setLoggedIn} />
       ) : (
         // TEMP: managers + employees both go here
         // TODO later create EmployeeDashboard.jsx

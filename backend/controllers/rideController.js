@@ -54,7 +54,6 @@ exports.bookRide = async (req, res) => {
 ========================================
 */
 exports.getRequestedRides = async (req, res) => {
-  console.log("JWT USER:", req.user);
   try {
     // Only drivers
     if (req.user.role !== "driver") {

@@ -17,7 +17,7 @@ exports.verifyToken = (req, res, next) => {
 
     // 🔥 This is what controller uses
     req.user = decoded;
-
+    console.log(`${decoded.role.toUpperCase()} AUTH:`, decoded);
     next();
   } catch (err) {
     res.status(401).json({ error: "Invalid token" });

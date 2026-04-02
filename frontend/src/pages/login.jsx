@@ -24,7 +24,7 @@ export default function Login({ setLoggedIn }) {
 
         setLoggedIn(true);
       } else {
-        alert("Login failed");
+        alert("Invalid Credentials");
       }
     } catch (err) {
       console.error(err);
