@@ -129,6 +129,16 @@ CREATE TABLE RATING (
 
 DESCRIBE rating;
 
+CREATE TABLE AUTH (
+    auth_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    password VARCHAR(100),
+    role VARCHAR(20),
+    linked_id INT
+);
+
+DESCRIBE auth;
+
 -- adding data for the above tables
 
 SET SQL_SAFE_UPDATES = 0;
@@ -163,8 +173,7 @@ INSERT INTO EMPLOYEE VALUES
 (008, '2026-01-25', 'Karan', NULL, 'Malhotra', '8899776655', 1);
 
 INSERT INTO MANAGER VALUES
-(001, 'Mayank', NULL, 'Rana'),
-(004, 'Aman', NULL, 'Sharma');
+(001, 'Mayank', NULL, 'Rana');
 
 INSERT INTO DRIVER VALUES
 (002, 'DL-4587', 'available', 4.5),
@@ -222,6 +231,21 @@ INSERT INTO RATING VALUES
 (703, 114, 006, 128, 5),
 (704, 116, 008, 130, 4);
 
+INSERT INTO AUTH (username,password,role,linked_id) VALUES
+('Rahul','Verma','user',125),
+('Sneha','Gupta','user',126),
+('Amit','Khanna','user',127),
+('Rohit','Bansal','user',128),
+('Simran','Kaur','user',129),
+('Vikas','Arora','user',130),
+('1','20260110','manager',1),
+('2','20260111','driver',2),
+('3','20260115','employee',3),
+('4','20260118','driver',4),
+('5','20260120','employee',5),
+('6','20260121','driver',6),
+('7','20260122','employee',7),
+('8','20260125','driver',8);
 
 SELECT * FROM COMPANY_OFFICE;
 SELECT * FROM EMPLOYEE;
@@ -234,6 +258,7 @@ SELECT * FROM USER;
 SELECT * FROM PAYMENT;
 SELECT * FROM ACCOUNT;
 SELECT * FROM RATING;
+SELECT * FROM AUTH;
 
 -- testing cases and updating
 
