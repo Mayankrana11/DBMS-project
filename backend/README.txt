@@ -6,7 +6,7 @@ npm install nodemon --save-dev
 npm install jsonwebtoken
 
 AUTH CREDENTIALS LOGIC:
-visit database line 250 - 262 to understand user and employee logins also visit line 132 for auth table schema
+visit database line 234 - 248 to understand user and employee logins also visit line 132 for auth table schema
 
 CREATE .ENV
 
