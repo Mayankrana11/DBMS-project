@@ -1,69 +1,98 @@
-import React, { useState } from "react";
-import { bookRide } from "../api";
+import React, { useEffect, useState } from "react";
 
 function BookRide() {
   const [pickup, setPickup] = useState("");
-  const [drop, setDrop] = useState("");
+  const [dropOff, setDropOff] = useState("");
+  const [balance, setBalance] = useState(0);
 
-  const handleBook = async () => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
 
-    if (!pickup || !drop || pickup.trim() === "" || drop.trim() === "") {
-      alert("Please enter both pickup and drop locations");
-      return;
-    }
-
+  const fetchBalance = async () => {
     try {
-      const res = await bookRide(token, {
-        pickup: pickup.trim(),
-        drop_off: drop.trim(),
+      const res = await fetch("http://localhost:5000/api/wallet/balance", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
-   
-      if (res.error) {
-        alert(res.error);
-        return;
-      }
-
-  
-      alert(`Ride ID: ${res.data.ride_id}, Driver: ${res.data.driver_id}`);
-
-      
-      setPickup("");
-      setDrop("");
-
+      const data = await res.json();
+      setBalance(data.balance);
     } catch (err) {
-      console.error("BOOK RIDE ERROR:", err);
-      alert("Something went wrong. Please try again.");
+      console.error("BALANCE ERROR:", err);
     }
   };
 
+  const bookRide = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/rides/book", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          pickup,
+          drop_off: dropOff
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert(`Ride booked! Ride ID: ${data.data.ride_id}`);
+      }
+
+      fetchBalance();
+    } catch (err) {
+      console.error("BOOK ERROR:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBalance();
+
+    const interval = setInterval(fetchBalance, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div>
-      {/* Title */}
-      <h3 style={{ marginBottom: "15px" }}>🚗 Book Your Ride</h3>
+    <div style={{ padding: "20px" }}>
+      <h1>Ride Management System</h1>
 
-      {/* Pickup */}
-      <input
-        className="input"
-        placeholder="Pickup Location"
-        value={pickup}
-        onChange={(e) => setPickup(e.target.value)}
-      />
+      <h2>🚗 Ride Dashboard</h2>
 
-      {/* Drop */}
-      <input
-        className="input"
-        placeholder="Drop Location"
-        value={drop}
-        onChange={(e) => setDrop(e.target.value)}
-      />
+      <h3>Wallet Balance: ₹{balance}</h3>
 
-      {/* Button */}
-      <button className="button" onClick={handleBook}>
-        Confirm Ride
-      </button>
+      <button onClick={handleLogout}>Logout</button>
+
+      <div style={{ marginTop: "20px" }}>
+        <h3>Book a Ride</h3>
+
+        <input
+          placeholder="Pickup Location"
+          value={pickup}
+          onChange={(e) => setPickup(e.target.value)}
+        />
+
+        <br /><br />
+
+        <input
+          placeholder="Drop Location"
+          value={dropOff}
+          onChange={(e) => setDropOff(e.target.value)}
+        />
+
+        <br /><br />
+
+        <button onClick={bookRide}>Confirm Ride</button>
+      </div>
     </div>
   );
 }
