@@ -241,8 +241,13 @@ exports.completeRide = async (ride_id) => {
     );
 
     const [[account]] = await connection.query(
-      `SELECT * FROM ACCOUNT WHERE user_id=?`,
+      `SELECT * FROM ACCOUNT 
+      WHERE entity_id=? AND entity_type='user'`,
       [ride.user_id]
+    );
+    const [[payment]] = await connection.query(
+      "SELECT payment_status, amount FROM PAYMENT WHERE ride_id=?",
+      [ride_id]
     );
 
     await connection.commit();
