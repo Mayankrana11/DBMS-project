@@ -8,14 +8,12 @@ CREATE TRIGGER after_ride_complete
 AFTER UPDATE ON RIDE
 FOR EACH ROW
 BEGIN
-    IF NEW.ride_status = 'completed' THEN
+    IF NEW.ride_status IN ('completed','cancelled') THEN
         UPDATE DRIVER
         SET availability_status = 'available'
         WHERE driver_id = NEW.driver_id;
     END IF;
 END$$
-
-DELIMITER ;
 
 DELIMITER $$
 

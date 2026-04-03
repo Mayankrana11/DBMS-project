@@ -104,13 +104,10 @@ DESCRIBE payment;
 
 
 CREATE TABLE ACCOUNT (
-    account_id INT,
-    user_id INT,
-    driver_id INT,
-    balance DECIMAL(10,2),
-    PRIMARY KEY (account_id, user_id, driver_id),
-    FOREIGN KEY (user_id) REFERENCES USER(user_id),
-    FOREIGN KEY (driver_id) REFERENCES DRIVER(driver_id)
+    account_id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_id INT,
+    entity_type ENUM('user','driver'),
+    balance DECIMAL(10,2) DEFAULT 0
 );
 
 DESCRIBE account;
@@ -217,7 +214,7 @@ INSERT INTO PAYMENT VALUES
 (505, 115, 150.00, 'failed'),
 (506, 116, 600.00, 'success');
 
-INSERT INTO ACCOUNT VALUES
+INSERT INTO ACCOUNT VALUES -- REDUNDANT : INSERTS OF OLD VERSION
 (123, 125, 002, 1200.56),
 (124, 126, 004, 850.75),
 (125, 127, 006, 640.50),
@@ -537,33 +534,14 @@ CREATE TRIGGER after_ride_complete
 AFTER UPDATE ON RIDE
 FOR EACH ROW
 BEGIN
-    IF NEW.ride_status = 'completed' THEN
+    IF NEW.ride_status IN ('completed','cancelled') THEN
         UPDATE DRIVER
         SET availability_status = 'available'
         WHERE driver_id = NEW.driver_id;
     END IF;
 END$$
 
-SELECT ride_id, driver_id, ride_status FROM RIDE WHERE ride_id = 3754;
-
-SHOW TRIGGERS;
-
 DELIMITER $$
-
-CREATE TRIGGER after_payment_success
-AFTER UPDATE ON PAYMENT
-FOR EACH ROW
-BEGIN
-    IF NEW.payment_status = 'success' THEN
-        UPDATE ACCOUNT
-        SET balance = balance - NEW.amount
-        WHERE user_id = (
-            SELECT user_id FROM RIDE WHERE ride_id = NEW.ride_id
-        );
-    END IF;
-END$$
-
-DELIMITER ;
 
 DROP TRIGGER IF EXISTS create_payment_after_ride;
 
@@ -578,4 +556,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+SHOW TRIGGERS;
+
 
