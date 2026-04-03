@@ -17,25 +17,6 @@ END$$
 
 DELIMITER ;
 
-
-DELIMITER $$
-
-CREATE TRIGGER after_payment_success
-AFTER UPDATE ON PAYMENT
-FOR EACH ROW
-BEGIN
-    IF NEW.payment_status = 'success' THEN
-        UPDATE ACCOUNT
-        SET balance = balance - NEW.amount
-        WHERE user_id = (
-            SELECT user_id FROM RIDE WHERE ride_id = NEW.ride_id
-        );
-    END IF;
-END$$
-
-DELIMITER ;
-
-
 DELIMITER $$
 
 CREATE TRIGGER create_payment_after_ride
