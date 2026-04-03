@@ -21,6 +21,30 @@ exports.createRide = async (pickup, drop_off, user_id) => {
       throw new Error("Invalid user_id");
     }
 
+    // Check wallet balance
+    const [[wallet]] = await connection.query(
+      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user'",
+      [user_id]
+    );
+
+    // Create wallet if missing
+    if (!wallet) {
+      await connection.query(
+        "INSERT INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 1000)",
+        [user_id]
+      );
+    }
+
+    // Fetch balance again
+    const [[walletCheck]] = await connection.query(
+      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user'",
+      [user_id]
+    );
+
+    if (walletCheck.balance < 200) {
+      throw new Error("Insufficient wallet balance to book ride");
+    }
+
     // Insert ride (requested, no driver yet)
     await connection.query(
       `INSERT INTO RIDE 
@@ -170,7 +194,7 @@ exports.completeRide = async (ride_id) => {
 
     // 🔥 Fetch updated data AFTER triggers
     const [[ride]] = await connection.query(
-      `SELECT * FROM RIDE WHERE ride_id=?`,
+      "SELECT user_id, driver_id, fare_amt FROM RIDE WHERE ride_id=?",
       [ride_id]
     );
 
@@ -179,8 +203,40 @@ exports.completeRide = async (ride_id) => {
       [ride.driver_id]
     );
 
-    const [[payment]] = await connection.query(
-      `SELECT * FROM PAYMENT WHERE ride_id=?`,
+    const fare = ride.fare_amt;
+    const user_id = ride.user_id;
+    const driver_id = ride.driver_id;
+
+    // Ensure wallets exist
+    await connection.query(
+      "INSERT IGNORE INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 1000)",
+      [user_id]
+    );
+
+    await connection.query(
+      "INSERT IGNORE INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'driver', 1000)",
+      [driver_id]
+    );
+
+    // Deduct user balance
+    await connection.query(
+      `UPDATE ACCOUNT
+      SET balance = balance - ?
+      WHERE entity_id=? AND entity_type='user'`,
+      [fare, user_id]
+    );
+
+    // Add driver balance
+    await connection.query(
+      `UPDATE ACCOUNT
+      SET balance = balance + ?
+      WHERE entity_id=? AND entity_type='driver'`,
+      [fare, driver_id]
+    );
+
+    // Mark payment success
+    await connection.query(
+      "UPDATE PAYMENT SET payment_status='success' WHERE ride_id=?",
       [ride_id]
     );
 
