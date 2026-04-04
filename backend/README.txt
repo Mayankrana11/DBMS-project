@@ -5,6 +5,8 @@ npm install express mysql2 dotenv cors
 npm install nodemon --save-dev
 npm install jsonwebtoken
 
+Tables updated : driver , ride, account, rating
+
 AUTH CREDENTIALS LOGIC:
 visit database line 231 - 245 to understand user and employee logins also visit line 129 for auth table schema
 

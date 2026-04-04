@@ -7,6 +7,7 @@ const driverRoutes = require("./routes/driverRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const walletRoutes = require("./routes/walletRoutes");
+const ratingRoutes = require("./routes/ratingRoutes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/wallet", walletRoutes);
 app.use("/api/wallet", walletRoutes);
 
 module.exports = app;

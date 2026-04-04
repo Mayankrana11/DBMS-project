@@ -27,3 +27,16 @@ export const bookRide = async (token, data) => {
 
   return res.json();
 };
+
+export const submitRating = async (token, data) => {
+  const res = await fetch(`${BASE_URL}/rating/submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  return res.json();
+};
