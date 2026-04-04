@@ -47,6 +47,30 @@ exports.bookRide = async (req, res) => {
   }
 };
 
+/*
+========================================
+USER: GET RIDE STATUS
+========================================
+*/
+exports.getUserRideStatus = async (req, res) => {
+  try {
+
+    if (req.user.role !== "user") {
+      return res.status(403).json({
+        error: "Only users can view ride status",
+      });
+    }
+
+    const user_id = req.user.id;
+
+    const result = await rideService.getUserRideStatus(user_id);
+
+    res.json(result);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 /*
 ========================================
