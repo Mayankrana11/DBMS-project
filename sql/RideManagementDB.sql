@@ -41,6 +41,9 @@ CREATE TABLE DRIVER (
     FOREIGN KEY (driver_id) REFERENCES EMPLOYEE(employee_id)
 );
 
+ALTER TABLE DRIVER
+ADD rating_count INT DEFAULT 0;
+
 DESCRIBE driver;
 
 CREATE TABLE TECHTEAM (
@@ -112,13 +115,13 @@ CREATE TABLE ACCOUNT (
 
 DESCRIBE account;
 
-CREATE TABLE RATING (
-    rating_id INT,
-    ride_id INT,
+CREATE TABLE RATING (  -- UPDATED TABLE
+    rating_id INT AUTO_INCREMENT PRIMARY KEY,
+    ride_id INT UNIQUE,
     driver_id INT,
     user_id INT,
-    rating_val INT,
-    PRIMARY KEY (rating_id, ride_id, driver_id, user_id),
+    rating_val INT CHECK (rating_val BETWEEN 1 AND 5),
+
     FOREIGN KEY (ride_id) REFERENCES RIDE(ride_id),
     FOREIGN KEY (driver_id) REFERENCES DRIVER(driver_id),
     FOREIGN KEY (user_id) REFERENCES USER(user_id)
