@@ -6,6 +6,7 @@ const { verifyToken } = require("../middleware/authMiddleware");
 
 // USER routes
 router.post("/book", verifyToken, rideController.bookRide);
+router.get("/user-status", verifyToken, rideController.getUserRideStatus);
 
 // DRIVER routes
 router.get("/requested", verifyToken, rideController.getRequestedRides);
