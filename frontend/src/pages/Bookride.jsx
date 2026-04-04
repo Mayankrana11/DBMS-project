@@ -13,6 +13,7 @@ function BookRide() {
   const [rating, setRating] = useState(5);
 
   const token = localStorage.getItem("token");
+  console.log("CURRENT RIDE:", currentRide);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -105,7 +106,7 @@ function BookRide() {
 
       if (!data || data.message) return;
 
-      setCurrentRide(data);
+      setCurrentRide(null);
 
       if (data.ride_status === "completed") {
         setCompletedRide(data);
@@ -176,8 +177,10 @@ function BookRide() {
 
       {/* DRIVER INFO */}
 
-      {currentRide && currentRide.driver_id && (
-        <div style={{ marginTop: "25px" }}>
+      {currentRide &&
+      currentRide.ride_status === "ongoing" && (
+
+        <div style={{ marginTop: "20px" }}>
           <h3>Driver Assigned</h3>
 
           <p>Driver ID: {currentRide.driver_id}</p>
@@ -185,48 +188,49 @@ function BookRide() {
           <p>
             Driver Rating: ⭐
             {currentRide.rating_avg
-              ? currentRide.rating_avg.toFixed(1)
+              ? Number(currentRide.rating_avg).toFixed(1)
               : "New Driver"}
           </p>
+
         </div>
+
       )}
 
       {/* RATING UI */}
 
-      {completedRide && (
+      {currentRide &&
+      currentRide.ride_status === "completed" &&
+      currentRide.driver_id &&
+      currentRide.already_rated === 0 && (
 
-        <div style={{ marginTop: "30px" }}>
-
+        <div style={{ marginTop: "25px" }}>
           <h3>Rate your driver</h3>
 
           <select
             value={rating}
-            onChange={(e) => setRating(e.target.value)}
+            onChange={(e) => setRating(Number(e.target.value))}
           >
-            <option value="1">1 ⭐</option>
-            <option value="2">2 ⭐</option>
-            <option value="3">3 ⭐</option>
-            <option value="4">4 ⭐</option>
-            <option value="5">5 ⭐</option>
+            <option value={1}>1 ⭐</option>
+            <option value={2}>2 ⭐</option>
+            <option value={3}>3 ⭐</option>
+            <option value={4}>4 ⭐</option>
+            <option value={5}>5 ⭐</option>
           </select>
 
           <button
             onClick={async () => {
-
-              const res = await submitRating(token, {
-                ride_id: completedRide.ride_id,
+              await submitRating(token, {
+                ride_id: currentRide.ride_id,
                 rating
               });
 
-              alert(res.message);
+              alert("Rating submitted");
 
-              setCompletedRide(null);
-
+              setCurrentRide(null); // remove panel
             }}
           >
             Submit Rating
           </button>
-
         </div>
 
       )}

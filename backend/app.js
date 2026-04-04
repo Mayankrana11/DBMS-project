@@ -20,6 +20,6 @@ app.use("/api/drivers", driverRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
-app.use("/api/wallet", walletRoutes);
+app.use("/api/rating", ratingRoutes);
 
 module.exports = app;
