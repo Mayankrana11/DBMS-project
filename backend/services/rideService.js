@@ -326,25 +326,39 @@ exports.cancelRide = async (ride_id) => {
 
 /*
 ========================================
-USER: GET RIDE STATUS
+6. USER: GET RIDE STATUS
 ========================================
 */
-exports.getUserRideStatus = async (req, res) => {
-  try {
+exports.getUserRideStatus = async (user_id) => {
 
-    if (req.user.role !== "user") {
-      return res.status(403).json({
-        error: "Only users can view ride status",
-      });
-    }
+  const [rows] = await db.query(
+    `SELECT 
+        r.ride_id,
+        r.ride_status,
+        r.driver_id,
+        d.rating_avg,
 
-    const user_id = req.user.id;
+        EXISTS (
+            SELECT 1
+            FROM RATING ra
+            WHERE ra.ride_id = r.ride_id
+            AND ra.user_id = ?
+        ) AS already_rated
 
-    const result = await rideService.getUserRideStatus(user_id);
+     FROM RIDE r
+     LEFT JOIN DRIVER d 
+     ON r.driver_id = d.driver_id
 
-    res.json(result);
+     WHERE r.user_id = ?
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+     ORDER BY r.ride_id DESC
+     LIMIT 1`,
+    [user_id, user_id]
+  );
+
+  if (rows.length === 0) {
+    return null;
   }
+
+  return rows[0];
 };
