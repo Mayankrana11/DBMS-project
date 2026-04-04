@@ -83,9 +83,10 @@ exports.createRide = async (pickup, drop_off, user_id) => {
 */
 exports.getRequestedRides = async (driver_id) => {
   const [rows] = await db.query(
-    `SELECT r.*, u.fname, u.lname
+    `SELECT r.*, u.fname, u.lname, d.rating_avg
      FROM RIDE r
      JOIN USER u ON r.user_id = u.user_id
+     LEFT JOIN DRIVER d ON r.driver_id = d.driver_id
      WHERE 
         (
           r.ride_status = 'requested'
@@ -320,5 +321,30 @@ exports.cancelRide = async (ride_id) => {
     throw err;
   } finally {
     connection.release();
+  }
+};
+
+/*
+========================================
+USER: GET RIDE STATUS
+========================================
+*/
+exports.getUserRideStatus = async (req, res) => {
+  try {
+
+    if (req.user.role !== "user") {
+      return res.status(403).json({
+        error: "Only users can view ride status",
+      });
+    }
+
+    const user_id = req.user.id;
+
+    const result = await rideService.getUserRideStatus(user_id);
+
+    res.json(result);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
