@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+const BASE_URL = "http://localhost:5000/api";
+
 function DriverDashboard() {
   const [rides, setRides] = useState([]);
   const [balance, setBalance] = useState(0);
@@ -16,7 +18,7 @@ function DriverDashboard() {
 
   const fetchBalance = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/wallet/balance", {
+      const res = await fetch(`${BASE_URL}/wallet/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -31,7 +33,7 @@ function DriverDashboard() {
 
   const fetchRides = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/rides/requested", {
+      const res = await fetch(`${BASE_URL}/rides/requested`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -45,7 +47,7 @@ function DriverDashboard() {
   };
 
   const acceptRide = async (ride_id) => {
-    await fetch("http://localhost:5000/api/rides/accept", {
+    await fetch(`${BASE_URL}/rides/accept`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,7 +60,7 @@ function DriverDashboard() {
   };
 
   const completeRide = async (ride_id) => {
-    await fetch("http://localhost:5000/api/rides/complete", {
+    await fetch(`${BASE_URL}/rides/complete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,7 +74,7 @@ function DriverDashboard() {
   };
 
   const cancelRide = async (ride_id) => {
-    await fetch("http://localhost:5000/api/rides/cancel", {
+    await fetch(`${BASE_URL}/rides/cancel`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

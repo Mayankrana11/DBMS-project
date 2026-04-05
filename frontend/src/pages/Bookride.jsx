@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { submitRating } from "../api";
 
+const BASE_URL = "http://localhost:5000/api";
+
 function BookRide() {
 
   const [pickup, setPickup] = useState("");
@@ -29,7 +31,7 @@ function BookRide() {
     try {
 
       const res = await fetch(
-        "http://localhost:5000/api/wallet/balance",
+        `${BASE_URL}/wallet/balance`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -55,7 +57,7 @@ function BookRide() {
     try {
 
       const res = await fetch(
-        "http://localhost:5000/api/rides/book",
+        `${BASE_URL}/rides/book`,
         {
           method: "POST",
           headers: {
@@ -94,7 +96,7 @@ function BookRide() {
     try {
 
       const res = await fetch(
-        "http://localhost:5000/api/rides/user-status",
+        `${BASE_URL}/rides/user-status`,
         {
           headers: {
             Authorization: `Bearer ${token}`
