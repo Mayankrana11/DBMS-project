@@ -17,6 +17,10 @@ END$$
 
 DELIMITER $$
 
+DROP TRIGGER IF EXISTS create_payment_after_ride;
+
+DELIMITER $$
+
 CREATE TRIGGER create_payment_after_ride
 AFTER INSERT ON RIDE
 FOR EACH ROW

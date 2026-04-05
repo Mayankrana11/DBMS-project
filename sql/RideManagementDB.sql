@@ -278,10 +278,9 @@ SHOW TRIGGERS;
 
 SELECT ride_status FROM RIDE WHERE ride_id = 3754;
 
-
 UPDATE DRIVER 
 SET availability_status = 'available'
-WHERE driver_id = 2;
+WHERE driver_id = 6;
 
 UPDATE DRIVER 
 SET availability_status = 'available'
