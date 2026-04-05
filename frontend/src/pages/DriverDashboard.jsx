@@ -7,7 +7,6 @@ function DriverDashboard() {
   const [balance, setBalance] = useState(0);
 
   const token = localStorage.getItem("token");
-
   const payload = JSON.parse(atob(token.split(".")[1]));
   const driverId = payload.id;
 
@@ -19,30 +18,24 @@ function DriverDashboard() {
   const fetchBalance = async () => {
     try {
       const res = await fetch(`${BASE_URL}/wallet/balance`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       const data = await res.json();
       setBalance(data.balance);
     } catch (err) {
-      console.error("BALANCE ERROR:", err);
+      console.error(err);
     }
   };
 
   const fetchRides = async () => {
     try {
       const res = await fetch(`${BASE_URL}/rides/requested`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       const data = await res.json();
       setRides(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("FETCH RIDES ERROR:", err);
+      console.error(err);
     }
   };
 
@@ -55,7 +48,6 @@ function DriverDashboard() {
       },
       body: JSON.stringify({ ride_id })
     });
-
     fetchRides();
   };
 
@@ -68,7 +60,6 @@ function DriverDashboard() {
       },
       body: JSON.stringify({ ride_id })
     });
-
     fetchRides();
     fetchBalance();
   };
@@ -82,7 +73,6 @@ function DriverDashboard() {
       },
       body: JSON.stringify({ ride_id })
     });
-
     fetchRides();
   };
 
@@ -99,50 +89,94 @@ function DriverDashboard() {
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Ride Management System</h1>
+  <div className="driver-bg">
+    <div className="dashboard">
 
-      <h2>🚗 Driver Dashboard</h2>
+      {/* 🔝 HEADER */}
+      <div className="dashboard-header">
+        <h2>🚗 Driver Dashboard</h2>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
 
-      <h3>Driver ID: {driverId}</h3>
+      {/* 📊 STATS */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <h4>Driver ID</h4>
+          <p>{driverId}</p>
+        </div>
 
-      <h3>Wallet Balance: ₹{balance}</h3>
+        <div className="stat-card">
+          <h4>Wallet Balance</h4>
+          <p>₹{balance}</p>
+        </div>
 
-      <button onClick={handleLogout}>Logout</button>
+        <div className="stat-card">
+          <h4>Available Rides</h4>
+          <p>{rides.length}</p>
+        </div>
+      </div>
 
-      {rides.length === 0 ? (
-        <p>No rides available</p>
-      ) : (
-        rides.map((r) => (
-          <div
-            key={r.ride_id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              margin: "10px 0",
-              borderRadius: "8px"
-            }}
-          >
-            <p><b>Passenger:</b> {r.fname} {r.lname}</p>
-            <p><b>Route:</b> {r.pickup} → {r.drop_off}</p>
-            <p><b>Fare:</b> ₹{r.fare_amt}</p>
-            <p><b>Status:</b> {r.ride_status}</p>
+      {/* 🚗 RIDES */}
+      <h3 className="section-title">Available Rides</h3>
 
-            {r.ride_status === "requested" && (
-              <button onClick={() => acceptRide(r.ride_id)}>Accept</button>
-            )}
+      <div className="rides-grid">
+        {rides.length === 0 ? (
+          <p className="empty">No rides available</p>
+        ) : (
+          rides.map((r) => (
+            <div key={r.ride_id} className="ride-card">
 
-            {r.ride_status === "ongoing" && (
-              <>
-                <button onClick={() => completeRide(r.ride_id)}>Complete</button>
-                <button onClick={() => cancelRide(r.ride_id)}>Cancel</button>
-              </>
-            )}
-          </div>
-        ))
-      )}
+              <div className="ride-header">
+                <h4>{r.fname} {r.lname}</h4>
+                <span className={`status ${r.ride_status}`}>
+                  {r.ride_status}
+                </span>
+              </div>
+
+              <p className="route">
+                📍 {r.pickup} → {r.drop_off}
+              </p>
+
+              <p className="fare">₹{r.fare_amt}</p>
+
+              <div className="actions">
+                {r.ride_status === "requested" && (
+                  <button
+                    className="btn accept"
+                    onClick={() => acceptRide(r.ride_id)}
+                  >
+                    Accept
+                  </button>
+                )}
+
+                {r.ride_status === "ongoing" && (
+                  <>
+                    <button
+                      className="btn complete"
+                      onClick={() => completeRide(r.ride_id)}
+                    >
+                      Complete
+                    </button>
+                    <button
+                      className="btn cancel"
+                      onClick={() => cancelRide(r.ride_id)}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+
+            </div>
+          ))
+        )}
+      </div>
+
     </div>
-  );
+  </div>
+);
 }
 
 export default DriverDashboard;
