@@ -106,9 +106,12 @@ function BookRide() {
 
       const data = await res.json();
 
-      if (!data || data.message) return;
+      if (!data || data.message) {
+        setCurrentRide(null);
+        return;
+      }
 
-      setCurrentRide(null);
+      setCurrentRide(data);
 
       if (data.ride_status === "completed") {
         setCompletedRide(data);
