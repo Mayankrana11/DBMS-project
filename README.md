@@ -56,6 +56,7 @@ After a ride is completed or cancelled, users can provide **Ratings** for driver
 - Payment  
 - Account (Weak Entity)  
 - Rating (Weak Entity)  
+- Auth 
 
 ---
 
@@ -93,18 +94,20 @@ The UI serves as a demonstration layer and is not the primary focus of the proje
 
 ## Technologies Used
 
-- Relational Database Management System (PostgreSQL / MySQL)
+- Relational Database Management System (MySQL)
 - SQL for schema definition, queries, triggers and transactions
-- Frontend framework for demonstration (optional)
-- Any backend language with embedded SQL support
-
+- Backend framework : Express on Node.js Runtime Environment
+- Frontend Library : React vite based
+- Language : JAVASCRIPT
+- Complete Implementation of SERN Stack (SQL, Express.js , React & Node.js)
+- Other technologies include JWT, CORS , Render, Netlify, MySQL WBCE
 ---
 
 ## Project Status
 
 - Task 1: Business Requirements and Scope – Completed  
 - Task 2: ER Diagram and Relational Model – Completed 
-- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Completed Task 5 Triggers
+- Task 3–6: Schema, Queries, Triggers, Transactions and UI – Completed 
 
 ---
 
