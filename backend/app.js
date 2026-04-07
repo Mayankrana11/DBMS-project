@@ -8,6 +8,8 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const transactionDemoRoutes = require("./routes/transactionDemoRoutes");
 
 const app = express();
 
@@ -21,5 +23,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/rating", ratingRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/transactions", transactionDemoRoutes);
 
 module.exports = app;
