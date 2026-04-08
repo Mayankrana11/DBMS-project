@@ -60,9 +60,9 @@ CREATE TABLE USER (
 CREATE TABLE RIDE (
     ride_id INT AUTO_INCREMENT PRIMARY KEY,
     ride_status VARCHAR(20),
-    pickup VARCHAR(100),
-    current_location VARCHAR(100),
-    drop_off VARCHAR(100),
+    pickup VARCHAR(1000),
+    current_location VARCHAR(1000),
+    drop_off VARCHAR(1000),
     dist_km DECIMAL(6,2),
     fare_amt DECIMAL(8,2),
     user_id INT,
