@@ -77,6 +77,12 @@ CREATE TABLE RIDE (
 
 CREATE INDEX idx_ride_status ON RIDE(ride_status);
 
+ALTER TABLE RIDE
+MODIFY pickup VARCHAR(1000),
+MODIFY current_location VARCHAR(1000),
+MODIFY drop_off VARCHAR(1000);
+
+
 DESCRIBE ride;
 
 CREATE TABLE USER (
