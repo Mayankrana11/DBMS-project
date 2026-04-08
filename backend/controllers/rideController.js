@@ -14,7 +14,7 @@ exports.bookRide = async (req, res) => {
       });
     }
 
-    const { pickup, drop_off } = req.body;
+    const { pickup, drop_off, distance, cost } = req.body;
     const user_id = req.user.id;
 
     if (
@@ -30,10 +30,16 @@ exports.bookRide = async (req, res) => {
       });
     }
 
+    // Use provided distance/cost or defaults
+    const dist = distance ? parseFloat(distance) : 10;
+    const fare = cost ? parseFloat(cost) : 200;
+
     const result = await rideService.createRide(
       pickup.trim(),
       drop_off.trim(),
-      user_id
+      user_id,
+      dist,
+      fare
     );
 
     res.json({
