@@ -5,7 +5,7 @@ const db = require("../config/db");
 1. USER BOOK RIDE (requested state)
 ========================================
 */
-exports.createRide = async (pickup, drop_off, user_id) => {
+exports.createRide = async (pickup, drop_off, user_id, distance = 10, cost = 200) => {
   const connection = await db.getConnection();
 
   try {
@@ -41,16 +41,16 @@ exports.createRide = async (pickup, drop_off, user_id) => {
       [user_id]
     );
 
-    if (walletCheck.balance < 200) {
+    if (walletCheck.balance < cost) {
       throw new Error("Insufficient wallet balance to book ride");
     }
 
     // Insert ride (requested, no driver yet)
     await connection.query(
-      `INSERT INTO RIDE 
+      `INSERT INTO RIDE
       (ride_status, pickup, current_location, drop_off, dist_km, fare_amt, user_id, driver_id)
       VALUES ('requested', ?, ?, ?, ?, ?, ?, NULL)`,
-      [pickup, pickup, drop_off, 10, 200, user_id]
+      [pickup, pickup, drop_off, distance, cost, user_id]
     );
 
     const [[ride]] = await connection.query(
@@ -64,6 +64,8 @@ exports.createRide = async (pickup, drop_off, user_id) => {
     return {
       ride_id,
       user_id,
+      distance,
+      cost,
       message: "Ride requested, waiting for driver"
     };
 
