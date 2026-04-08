@@ -1,60 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styling */
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background: #f4f6f9;
 }
 
-/* Center container */
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+/* ONLY safe transitions */
+button {
+  transition: background 0.2s ease;
 }
 
-/* Card UI */
-.card {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Inputs */
-.input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-/* Buttons */
-.button {
-  width: 100%;
-  padding: 12px;
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.button:hover {
-  background: #4338ca;
-}
-
-/* Dashboard grid */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-/* Card item */
-.card-item {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
 }
