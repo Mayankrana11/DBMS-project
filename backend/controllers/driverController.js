@@ -27,7 +27,23 @@ exports.getAvailableDrivers = async (req, res) => {
       WHERE d.availability_status = 'available'
     `);
 
-    res.json(rows);
+    // Add simulated locations for map display (spread around a city center)
+    // In production, these would come from real GPS data
+    const cityCenter = { lat: 28.6139, lon: 77.209 }; // Delhi coordinates
+
+    const driversWithLocation = rows.map((driver, index) => {
+      // Spread drivers around the city center with small offsets
+      const latOffset = (Math.sin(index * 1.5) * 0.05); // ~5km spread
+      const lonOffset = (Math.cos(index * 1.5) * 0.05);
+
+      return {
+        ...driver,
+        lat: cityCenter.lat + latOffset,
+        lon: cityCenter.lon + lonOffset
+      };
+    });
+
+    res.json({ drivers: driversWithLocation });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
