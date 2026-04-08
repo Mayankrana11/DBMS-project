@@ -619,9 +619,21 @@ function BookRide() {
         /* Main Content */
         .main-content {
           display: grid;
-          grid-template-columns: 400px 1fr;
+          grid-template-columns: minmax(350px, 450px) 1fr;
           flex: 1;
           overflow: hidden;
+        }
+
+        @media (max-width: 1200px) {
+          .main-content {
+            grid-template-columns: minmax(320px, 400px) 1fr;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .main-content {
+            grid-template-columns: 1fr;
+          }
         }
 
         /* Booking Panel */
@@ -1018,7 +1030,13 @@ function BookRide() {
         }
 
         /* Responsive Design */
-        @media (max-width: 900px) {
+        @media (max-width: 1200px) {
+          .booking-panel {
+            box-shadow: 1px 0 8px rgba(0,0,0,0.08);
+          }
+        }
+
+        @media (max-width: 768px) {
           .main-content {
             grid-template-columns: 1fr;
           }
@@ -1029,7 +1047,7 @@ function BookRide() {
 
           .map-panel {
             order: 1;
-            height: 50vh;
+            height: 45vh;
           }
 
           .mobile-ride-options {
@@ -1038,6 +1056,12 @@ function BookRide() {
 
           .ride-options {
             display: none;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .map-panel {
+            height: 40vh;
           }
         }
 

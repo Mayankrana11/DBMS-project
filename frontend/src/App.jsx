@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Login from "./pages/login";
-import Dashboard from "./pages/dashboard";
+import BookRide from "./pages/BookRide";
 import DriverDashboard from "./pages/DriverDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -41,7 +41,7 @@ function App() {
       ) : role === "driver" ? (
         <DriverDashboard setLoggedIn={setLoggedIn} />
       ) : role === "user" ? (
-        <Dashboard setLoggedIn={setLoggedIn} />
+        <BookRide />
       ) : role === "manager" ? (
         <AdminDashboard setLoggedIn={setLoggedIn} />
       ) : (
