@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { submitRating } from "../api";
 import { MapPin, Navigation, Wallet, Star, Car } from "lucide-react";
 
+import MapView from "../components/mapview";
+import LocationSearch from "../components/locationsearch";
+
 const BASE_URL = "http://localhost:5000/api";
 
 function BookRide() {
@@ -15,6 +18,13 @@ function BookRide() {
 
   const [rating, setRating] = useState(5);
 
+  // ✅ NEW STATES (map)
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [dropCoords, setDropCoords] = useState(null);
+
+  const [distance, setDistance] = useState(null);
+  const [duration, setDuration] = useState(null);
+
   const token = localStorage.getItem("token");
 
   const handleLogout = () => {
@@ -22,18 +32,32 @@ function BookRide() {
     window.location.href = "/";
   };
 
+  /*
+  =============================
+  FETCH WALLET BALANCE
+  =============================
+  */
   const fetchBalance = async () => {
     try {
       const res = await fetch(`${BASE_URL}/wallet/balance`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
+
       const data = await res.json();
       setBalance(data.balance);
+
     } catch (err) {
       console.error("BALANCE ERROR:", err);
     }
   };
 
+  /*
+  =============================
+  BOOK RIDE (UNCHANGED)
+  =============================
+  */
   const bookRide = async () => {
     try {
       const res = await fetch(`${BASE_URL}/rides/book`, {
@@ -63,10 +87,17 @@ function BookRide() {
     }
   };
 
+  /*
+  =============================
+  CHECK RIDE STATUS
+  =============================
+  */
   const checkRideStatus = async () => {
     try {
       const res = await fetch(`${BASE_URL}/rides/user-status`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       const data = await res.json();
@@ -97,7 +128,14 @@ function BookRide() {
     }, 5000);
 
     return () => clearInterval(interval);
+
   }, []);
+
+  // ✅ NEW: route data handler
+  const handleRouteData = ({ distance, duration }) => {
+    setDistance(distance);
+    setDuration(duration);
+  };
 
   return (
     <div className="w-full min-h-screen bg-gray-100">
@@ -117,37 +155,49 @@ function BookRide() {
         </button>
       </div>
 
-      {/* MAIN CONTAINER */}
+      {/* MAIN */}
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6 p-6">
 
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="bg-white p-6 rounded-xl shadow">
 
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Navigation size={18} /> Book a Ride
           </h2>
 
-          {/* PICKUP */}
-          <div className="relative mb-3">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Pickup Location"
-              value={pickup}
-              onChange={(e) => setPickup(e.target.value)}
+          {/* ✅ MAP */}
+          <div className="mb-4">
+            <MapView
+              pickup={pickupCoords}
+              drop={dropCoords}
+              setRouteData={handleRouteData}
             />
           </div>
 
-          {/* DROP */}
-          <div className="relative mb-4">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              className="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Drop Location"
-              value={dropOff}
-              onChange={(e) => setDropOff(e.target.value)}
-            />
-          </div>
+          {/* ✅ PICKUP SEARCH */}
+          <LocationSearch
+            placeholder="Enter Pickup Location"
+            onSelect={(loc) => {
+              setPickup(loc.name);
+              setPickupCoords([loc.lat, loc.lon]);
+            }}
+          />
+
+          {/* ✅ DROP SEARCH */}
+          <LocationSearch
+            placeholder="Enter Drop Location"
+            onSelect={(loc) => {
+              setDropOff(loc.name);
+              setDropCoords([loc.lat, loc.lon]);
+            }}
+          />
+
+          {/* ✅ DISTANCE + TIME */}
+          {distance && (
+            <div className="mb-4 text-sm text-gray-600">
+              Distance: <b>{distance} km</b> | Time: <b>{duration} mins</b>
+            </div>
+          )}
 
           <button
             onClick={bookRide}
@@ -168,12 +218,11 @@ function BookRide() {
 
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className="space-y-6">
 
           {currentRide &&
           currentRide.ride_status === "ongoing" && (
-
             <div className="bg-white p-6 rounded-xl shadow">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <Car size={18} /> Driver Assigned
@@ -196,7 +245,6 @@ function BookRide() {
           currentRide.ride_status === "completed" &&
           currentRide.driver_id &&
           currentRide.already_rated === 0 && (
-
             <div className="bg-white p-6 rounded-xl shadow">
               <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Star size={18} /> Rate your driver
