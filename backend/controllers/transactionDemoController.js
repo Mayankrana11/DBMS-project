@@ -187,6 +187,9 @@ exports.driverAcceptRace = async (req, res) => {
       driver2: { id: driver2_id, status: driver2?.availability_status }
     });
 
+    // Start transaction for the race
+    await connection.beginTransaction();
+
     // Simulate race: Try driver 1 first
     let winner = null;
 
