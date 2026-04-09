@@ -25,7 +25,7 @@ exports.bookConcurrentRides = async (req, res) => {
 
     // Check wallet balance ONCE at start
     const [[wallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
       [user_id]
     );
 
@@ -60,7 +60,7 @@ exports.bookConcurrentRides = async (req, res) => {
     try {
       // Re-check balance after first ride deduction
       const [[walletAfterFirst]] = await connection.query(
-        "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+        "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
         [user_id]
       );
 
@@ -97,10 +97,14 @@ exports.bookConcurrentRides = async (req, res) => {
       });
     }
 
-    // If both succeed, deduct balances
+    // If both succeed, deduct from user's latest account entry
+    const [[userAcc]] = await connection.query(
+      "SELECT account_id FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
+      [user_id]
+    );
     await connection.query(
-      "UPDATE ACCOUNT SET balance = balance - ? WHERE entity_id = ? AND entity_type = 'user'",
-      [rideCost * 2, user_id]
+      "UPDATE ACCOUNT SET balance = balance - ? WHERE account_id = ?",
+      [rideCost * 2, userAcc.account_id]
     );
 
     await connection.commit();
@@ -306,12 +310,12 @@ exports.atomicWalletTransfer = async (req, res) => {
 
     // Get initial balances
     const [[fromWallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
       [from_user_id]
     );
 
     const [[toWallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver' ORDER BY account_id DESC LIMIT 1",
       [to_driver_id]
     );
 
@@ -337,29 +341,38 @@ exports.atomicWalletTransfer = async (req, res) => {
       });
     }
 
-    // Perform atomic transfer
+    // Perform atomic transfer - debit from user's latest account
+    const [[userAcc]] = await connection.query(
+      "SELECT account_id FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
+      [from_user_id]
+    );
     await connection.query(
-      "UPDATE ACCOUNT SET balance = balance - ? WHERE entity_id = ? AND entity_type = 'user'",
-      [amount, from_user_id]
+      "UPDATE ACCOUNT SET balance = balance - ? WHERE account_id = ?",
+      [amount, userAcc.account_id]
     );
 
     results.push({ step: "Debited from user", amount });
 
+    // Credit to driver's latest account
+    const [[driverAcc]] = await connection.query(
+      "SELECT account_id FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver' ORDER BY account_id DESC LIMIT 1",
+      [to_driver_id]
+    );
     await connection.query(
-      "UPDATE ACCOUNT SET balance = balance + ? WHERE entity_id = ? AND entity_type = 'driver'",
-      [amount, to_driver_id]
+      "UPDATE ACCOUNT SET balance = balance + ? WHERE account_id = ?",
+      [amount, driverAcc.account_id]
     );
 
     results.push({ step: "Credited to driver", amount });
 
     // Verify consistency
     const [[fromWalletAfter]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
       [from_user_id]
     );
 
     const [[toWalletAfter]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver' ORDER BY account_id DESC LIMIT 1",
       [to_driver_id]
     );
 
@@ -435,12 +448,12 @@ exports.completeRideWithAcidDemo = async (req, res) => {
 
     // Get balances before
     const [[userWallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
       [ride.user_id]
     );
 
     const [[driverWallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver' ORDER BY account_id DESC LIMIT 1",
       [ride.driver_id]
     );
 
@@ -487,12 +500,12 @@ exports.completeRideWithAcidDemo = async (req, res) => {
 
     // Verify final state
     const [[userAfter]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'user' ORDER BY account_id DESC LIMIT 1",
       [ride.user_id]
     );
 
     const [[driverAfter]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id = ? AND entity_type = 'driver' ORDER BY account_id DESC LIMIT 1",
       [ride.driver_id]
     );
 

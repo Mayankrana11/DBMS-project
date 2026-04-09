@@ -21,9 +21,9 @@ exports.createRide = async (pickup, drop_off, user_id, distance = 10, cost = 200
       throw new Error("Invalid user_id");
     }
 
-    // Check wallet balance
+    // Check wallet balance (latest entry)
     const [[wallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1",
       [user_id]
     );
 
@@ -35,9 +35,9 @@ exports.createRide = async (pickup, drop_off, user_id, distance = 10, cost = 200
       );
     }
 
-    // Fetch balance again
+    // Fetch balance again (latest entry)
     const [[walletCheck]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user'",
+      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1",
       [user_id]
     );
 
@@ -221,20 +221,30 @@ exports.completeRide = async (ride_id) => {
       [driver_id]
     );
 
-    // Deduct user balance
+    // Deduct from user's latest account entry
+    const [[userAccount]] = await connection.query(
+      `SELECT account_id FROM ACCOUNT
+      WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1`,
+      [user_id]
+    );
     await connection.query(
       `UPDATE ACCOUNT
       SET balance = balance - ?
-      WHERE entity_id=? AND entity_type='user'`,
-      [fare, user_id]
+      WHERE account_id = ?`,
+      [fare, userAccount.account_id]
     );
 
-    // Add driver balance
+    // Add to driver's latest account entry
+    const [[driverAccount]] = await connection.query(
+      `SELECT account_id FROM ACCOUNT
+      WHERE entity_id=? AND entity_type='driver' ORDER BY account_id DESC LIMIT 1`,
+      [driver_id]
+    );
     await connection.query(
       `UPDATE ACCOUNT
       SET balance = balance + ?
-      WHERE entity_id=? AND entity_type='driver'`,
-      [fare, driver_id]
+      WHERE account_id = ?`,
+      [fare, driverAccount.account_id]
     );
 
     // Mark payment success
@@ -244,8 +254,8 @@ exports.completeRide = async (ride_id) => {
     );
 
     const [[account]] = await connection.query(
-      `SELECT * FROM ACCOUNT 
-      WHERE entity_id=? AND entity_type='user'`,
+      `SELECT * FROM ACCOUNT
+      WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1`,
       [ride.user_id]
     );
     const [[payment]] = await connection.query(
