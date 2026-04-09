@@ -158,23 +158,21 @@ exports.getUsers = async (req, res) => {
              u.fname,
              u.lname,
              u.email_phn AS email,
-             COALESCE(a.balance, 0) AS balance
+             COALESCE(
+               (SELECT a1.balance
+                FROM ACCOUNT a1
+                WHERE a1.entity_id = u.user_id
+                  AND a1.entity_type = 'user'
+                ORDER BY a1.account_id DESC
+                LIMIT 1),
+               0
+             ) AS balance
       FROM USER u
-      LEFT JOIN (
-        SELECT entity_id, balance
-        FROM ACCOUNT
-        WHERE entity_type = 'user'
-        AND account_id IN (
-          SELECT MAX(account_id)
-          FROM ACCOUNT
-          WHERE entity_type = 'user'
-          GROUP BY entity_id
-        )
-      ) a ON u.user_id = a.entity_id
       ORDER BY u.user_id
     `);
     res.json(rows);
   } catch (err) {
+    console.error("GET USERS ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -188,9 +186,10 @@ exports.updateUserBalance = async (req, res) => {
   const connection = await db.getConnection();
 
   try {
-    const { user_id, balance } = req.body;
+    const user_id = parseInt(req.params.id);
+    const { balance } = req.body;
 
-    if (!user_id || balance === undefined) {
+    if (balance === undefined) {
       return res.status(400).json({ error: "user_id and balance required" });
     }
 
