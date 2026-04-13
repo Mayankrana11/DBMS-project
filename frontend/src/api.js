@@ -15,6 +15,18 @@ export const login = async (data) => {
   return res.json();
 };
 
+export const register = async (data) => {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return res.json();
+};
+
 export const bookRide = async (token, data) => {
   const res = await fetch(`${BASE_URL}/rides/book`, {
     method: "POST",
