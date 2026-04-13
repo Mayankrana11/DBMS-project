@@ -50,7 +50,7 @@ CREATE TABLE VEHICLE (
 );
 
 CREATE TABLE USER (
-    user_id INT PRIMARY KEY,
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
     fname VARCHAR(30),
     mname VARCHAR(30),
     lname VARCHAR(30),
