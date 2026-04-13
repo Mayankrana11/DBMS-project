@@ -34,7 +34,7 @@ function App() {
 
   return (
     <div>
-      <h1>Ride Management System</h1>
+      {/* <h1>Ride Management System</h1> */}
 
       {!loggedIn ? (
         <Login setLoggedIn={setLoggedIn} />
