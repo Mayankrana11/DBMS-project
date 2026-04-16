@@ -13,6 +13,8 @@ import {
   updateUserBalance,
 } from "../api";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 function AdminDashboard({ setLoggedIn }) {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -124,7 +126,7 @@ function AdminDashboard({ setLoggedIn }) {
 
   const loadDrivers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/drivers", {
+      const res = await fetch(`${BASE_URL}/drivers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

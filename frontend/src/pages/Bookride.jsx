@@ -4,7 +4,7 @@ import L from "leaflet";
 import { submitRating } from "../api";
 import "leaflet/dist/leaflet.css";
 
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Fix for default Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
