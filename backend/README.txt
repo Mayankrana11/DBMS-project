@@ -16,6 +16,7 @@ CREATE .env in /backend and put this in:
 
 PORT=5000
 DB_HOST=localhost
+DB_PORT=11091
 DB_USER=root
 DB_PASSWORD=yourpassword
 DB_NAME=RideManagementDB

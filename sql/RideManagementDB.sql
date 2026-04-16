@@ -186,10 +186,10 @@ INSERT INTO MANAGER VALUES
 (001, 'Mayank', NULL, 'Rana');
 
 INSERT INTO DRIVER VALUES
-(002, 'DL-4587', 'available', 4.5),
-(004, 'MH-7845', 'available', 4.2),
-(006, 'KA-9987', 'busy', 4.7),
-(008, 'DL-2211', 'available', 4.0);
+(002, 'DL-4587', 'available', 4.5, 1),
+(004, 'MH-7845', 'available', 4.2, 1),
+(006, 'KA-9987', 'busy', 4.7, 1),
+(008, 'DL-2211', 'available', 4.0, 1);
 
 INSERT INTO TECHTEAM VALUES
 (003, 'Rishi', NULL, 'Raina'),
@@ -212,12 +212,12 @@ INSERT INTO RIDE VALUES
 
 
 INSERT INTO USER VALUES
-(125, 'completed', 'Rahul', NULL, 'Verma', 'rahul@gmail.com'),
-(126, 'completed', 'Sneha', NULL, 'Gupta', 'sneha@gmail.com'),
-(127, 'ongoing', 'Amit', NULL, 'Khanna', 'amit@gmail.com'),
-(128, 'completed', 'Rohit', NULL, 'Bansal', 'rohit@gmail.com'),
-(129, 'cancelled', 'Simran', NULL, 'Kaur', 'simran@gmail.com'),
-(130, 'completed', 'Vikas', NULL, 'Arora', 'vikas@gmail.com');
+(125, 'Rahul', NULL, 'Verma', 'rahul@gmail.com'),
+(126, 'Sneha', NULL, 'Gupta', 'sneha@gmail.com'),
+(127, 'Amit', NULL, 'Khanna', 'amit@gmail.com'),
+(128, 'Rohit', NULL, 'Bansal', 'rohit@gmail.com'),
+(129, 'Simran', NULL, 'Kaur', 'simran@gmail.com'),
+(130, 'Vikas', NULL, 'Arora', 'vikas@gmail.com');
 
 INSERT INTO PAYMENT VALUES
 (501, 111, 350.00, 'success'),
