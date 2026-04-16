@@ -27,10 +27,10 @@ exports.createRide = async (pickup, drop_off, user_id, distance = 10, cost = 200
       [user_id]
     );
 
-    // Create wallet if missing
+    // Create wallet if missing (with 0 balance, not 1000)
     if (!wallet) {
       await connection.query(
-        "INSERT INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 1000)",
+        "INSERT INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 0)",
         [user_id]
       );
     }
@@ -183,19 +183,13 @@ exports.completeRide = async (ride_id) => {
 
     // Complete ride
     await connection.query(
-      `UPDATE RIDE 
-      SET ride_status = 'completed', current_location = current_location
+      `UPDATE RIDE
+      SET ride_status = 'completed', current_location = drop_off
       WHERE ride_id = ?`,
       [ride_id]
     );
 
-    // Payment success → triggers account update
-    await connection.query(
-      `UPDATE PAYMENT SET payment_status='success' WHERE ride_id=?`,
-      [ride_id]
-    );
-
-    // 🔥 Fetch updated data AFTER triggers
+    // Fetch ride data
     const [[ride]] = await connection.query(
       "SELECT user_id, driver_id, fare_amt FROM RIDE WHERE ride_id=?",
       [ride_id]
@@ -210,15 +204,15 @@ exports.completeRide = async (ride_id) => {
     const user_id = ride.user_id;
     const driver_id = ride.driver_id;
 
-    // Ensure wallets exist
+    // Ensure wallets exist (create with 0 balance if missing, don't overwrite existing)
     await connection.query(
-      "INSERT IGNORE INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 1000)",
-      [user_id]
+      "INSERT INTO ACCOUNT(entity_id, entity_type, balance) SELECT ?, 'user', 0 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM ACCOUNT WHERE entity_id=? AND entity_type='user')",
+      [user_id, user_id]
     );
 
     await connection.query(
-      "INSERT IGNORE INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'driver', 1000)",
-      [driver_id]
+      "INSERT INTO ACCOUNT(entity_id, entity_type, balance) SELECT ?, 'driver', 0 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM ACCOUNT WHERE entity_id=? AND entity_type='driver')",
+      [driver_id, driver_id]
     );
 
     // Deduct from user's latest account entry
@@ -253,6 +247,7 @@ exports.completeRide = async (ride_id) => {
       [ride_id]
     );
 
+    // Fetch final account balance
     const [[account]] = await connection.query(
       `SELECT * FROM ACCOUNT
       WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1`,
