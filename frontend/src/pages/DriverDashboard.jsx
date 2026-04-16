@@ -12,9 +12,16 @@ function DriverDashboard() {
 
   const token = localStorage.getItem("token");
 
-  // Parse JWT token to get driver ID
-  const payload = JSON.parse(atob(token.split(".")[1]));
-  const driverId = payload.id;
+  // Safety check: Parse JWT token to get driver ID if token exists
+  let driverId = "Unknown";
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      driverId = payload.id;
+    } catch (e) {
+      console.error("Invalid token format");
+    }
+  }
 
   const handleLogout = () => {
     localStorage.clear();
@@ -22,13 +29,13 @@ function DriverDashboard() {
   };
 
   const fetchBalance = async () => {
+    if (!token) return;
     try {
       const res = await fetch(`${BASE_URL}/wallet/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-
       const data = await res.json();
       setBalance(data.balance);
     } catch (err) {
@@ -37,6 +44,7 @@ function DriverDashboard() {
   };
 
   const fetchRides = async () => {
+    if (!token) return;
     try {
       const res = await fetch(`${BASE_URL}/rides/requested`, {
         headers: {
@@ -77,18 +85,22 @@ function DriverDashboard() {
   };
 
   const acceptRide = async (ride_id) => {
-    await fetch(`${BASE_URL}/rides/accept`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ ride_id })
-    });
+    try {
+      await fetch(`${BASE_URL}/rides/accept`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ ride_id })
+      });
 
-    // Set accepted ride and clear other rides from display
-    setAcceptedRideId(ride_id);
-    fetchRides();
+      // Set accepted ride and clear other rides from display
+      setAcceptedRideId(ride_id);
+      fetchRides();
+    } catch (err) {
+      console.error("Error accepting ride", err);
+    }
   };
 
   const completeRide = async (ride_id) => {
@@ -120,15 +132,15 @@ function DriverDashboard() {
     fetchRides();
   };
 
-  // Touch/Swipe handlers for the slider
+  // --- TOUCH HANDLERS (MOBILE) ---
   const handleTouchStart = useCallback((rideId, e) => {
     const touch = e.touches[0];
     setTouchStates(prev => ({
       ...prev,
       [rideId]: {
         startX: touch.clientX,
-        currentX: touch.clientX,
-        isDragging: true
+        isDragging: true,
+        deltaX: 0
       }
     }));
   }, []);
@@ -139,51 +151,46 @@ function DriverDashboard() {
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStates[rideId].startX;
 
+    // Get exact slider width dynamically to prevent dragging outside
+    const sliderWidth = touchRefs.current[rideId]?.clientWidth || 300;
+    const maxPixels = sliderWidth - 56; // container width minus handle width (48px) and padding (8px)
+
+    // Bind the movement between 0 and the max width of the track
+    const boundedX = Math.max(0, Math.min(maxPixels, deltaX));
+
+    setSwipeStates(prev => ({ ...prev, [rideId]: boundedX }));
     setTouchStates(prev => ({
       ...prev,
-      [rideId]: {
-        ...prev[rideId],
-        currentX: touch.clientX,
-        deltaX
-      }
-    }));
-
-    // Calculate swipe percentage based on slider width (full width drag)
-    const sliderWidth = 260; // Approximate slider width in pixels
-    const maxPercent = 220; // Can slide almost to the end
-    const swipePercent = (deltaX / sliderWidth) * maxPercent;
-    setSwipeStates(prev => ({
-      ...prev,
-      [rideId]: Math.max(0, Math.min(maxPercent, swipePercent))
+      [rideId]: { ...prev[rideId], deltaX: boundedX }
     }));
   }, [touchStates]);
 
   const handleTouchEnd = useCallback((rideId, ride) => {
-    const deltaX = touchStates[rideId]?.deltaX || 0;
+    const state = touchStates[rideId];
+    if (!state?.isDragging) return;
 
-    setTouchStates(prev => ({
-      ...prev,
-      [rideId]: { isDragging: false }
-    }));
+    const deltaX = state.deltaX || 0;
+    const sliderWidth = touchRefs.current[rideId]?.clientWidth || 300;
+    const threshold = (sliderWidth - 56) * 0.6; // 60% of the track to accept
 
-    // Threshold for accepting (slide more than 60% to the right)
-    if (deltaX > 150) {
-      setSwipeStates(prev => ({ ...prev, [rideId]: 220 }));
+    setTouchStates(prev => ({ ...prev, [rideId]: { isDragging: false } }));
+
+    if (deltaX > threshold) {
+      setSwipeStates(prev => ({ ...prev, [rideId]: sliderWidth - 56 }));
       acceptRide(ride.ride_id);
     } else {
-      // Reset to center
       setSwipeStates(prev => ({ ...prev, [rideId]: 0 }));
     }
   }, [touchStates]);
 
-  // Mouse handlers for desktop
+  // --- MOUSE HANDLERS (DESKTOP) ---
   const handleMouseDown = useCallback((rideId, e) => {
     setTouchStates(prev => ({
       ...prev,
       [rideId]: {
         startX: e.clientX,
-        currentX: e.clientX,
-        isDragging: true
+        isDragging: true,
+        deltaX: 0
       }
     }));
   }, []);
@@ -192,35 +199,30 @@ function DriverDashboard() {
     if (!touchStates[rideId]?.isDragging) return;
 
     const deltaX = e.clientX - touchStates[rideId].startX;
+    
+    const sliderWidth = touchRefs.current[rideId]?.clientWidth || 300;
+    const maxPixels = sliderWidth - 56;
+    const boundedX = Math.max(0, Math.min(maxPixels, deltaX));
 
+    setSwipeStates(prev => ({ ...prev, [rideId]: boundedX }));
     setTouchStates(prev => ({
       ...prev,
-      [rideId]: {
-        ...prev[rideId],
-        currentX: e.clientX,
-        deltaX
-      }
-    }));
-
-    const sliderWidth = 260;
-    const maxPercent = 220;
-    const swipePercent = (deltaX / sliderWidth) * maxPercent;
-    setSwipeStates(prev => ({
-      ...prev,
-      [rideId]: Math.max(0, Math.min(maxPercent, swipePercent))
+      [rideId]: { ...prev[rideId], deltaX: boundedX }
     }));
   }, [touchStates]);
 
   const handleMouseUp = useCallback((rideId, ride) => {
-    const deltaX = touchStates[rideId]?.deltaX || 0;
+    const state = touchStates[rideId];
+    if (!state?.isDragging) return;
 
-    setTouchStates(prev => ({
-      ...prev,
-      [rideId]: { isDragging: false }
-    }));
+    const deltaX = state.deltaX || 0;
+    const sliderWidth = touchRefs.current[rideId]?.clientWidth || 300;
+    const threshold = (sliderWidth - 56) * 0.6;
 
-    if (deltaX > 150) {
-      setSwipeStates(prev => ({ ...prev, [rideId]: 220 }));
+    setTouchStates(prev => ({ ...prev, [rideId]: { isDragging: false } }));
+
+    if (deltaX > threshold) {
+      setSwipeStates(prev => ({ ...prev, [rideId]: sliderWidth - 56 }));
       acceptRide(ride.ride_id);
     } else {
       setSwipeStates(prev => ({ ...prev, [rideId]: 0 }));
@@ -345,18 +347,18 @@ function DriverDashboard() {
                           className="swipe-slider"
                           onTouchStart={(e) => handleTouchStart(ride.ride_id, e)}
                           onTouchMove={(e) => handleTouchMove(ride.ride_id, e)}
-                          onTouchEnd={(e) => handleTouchEnd(ride.ride_id, ride)}
+                          onTouchEnd={() => handleTouchEnd(ride.ride_id, ride)}
                           onMouseDown={(e) => handleMouseDown(ride.ride_id, e)}
                           onMouseMove={(e) => handleMouseMove(ride.ride_id, e)}
-                          onMouseUp={(e) => handleMouseUp(ride.ride_id, ride)}
-                          onMouseLeave={(e) => handleMouseUp(ride.ride_id, ride)}
+                          onMouseUp={() => handleMouseUp(ride.ride_id, ride)}
+                          onMouseLeave={() => handleMouseUp(ride.ride_id, ride)}
                         >
                           <div
                             className="swipe-handle"
                             style={{
-                              transform: swipeStates[ride.ride_id]
-                                ? `translateX(${(swipeStates[ride.ride_id] / 220) * 100}%)`
-                                : 'translateX(0)'
+                              transform: `translateX(${swipeStates[ride.ride_id] || 0}px)`,
+                              // Remove CSS delay while dragging so it smoothly follows the mouse/finger
+                              transition: touchStates[ride.ride_id]?.isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}
                           >
                             <span className="swipe-arrow">➜</span>
@@ -714,7 +716,6 @@ function DriverDashboard() {
           align-items: center;
           justify-content: center;
           cursor: grab;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           user-select: none;
           box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
