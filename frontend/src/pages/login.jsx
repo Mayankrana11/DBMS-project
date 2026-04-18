@@ -169,7 +169,7 @@ export default function Login({ setLoggedIn }) {
       {/* Embedded CSS */}
       <style>{`
         .login-wrapper {
-          min-height: 100vh;
+          min-height: 100dvh;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -252,13 +252,15 @@ export default function Login({ setLoggedIn }) {
         .login-input {
           width: 100%;
           box-sizing: border-box;
-          padding: 0.625rem 1rem;
+          padding: 0.75rem 1rem;
           border-radius: 0.5rem;
           border: 1px solid #d1d5db;
           background-color: #f9fafb;
           color: #111827;
           transition: all 0.2s ease-in-out;
           font-family: inherit;
+
+          font-size: 16px; /* prevents mobile zoom */
         }
         .login-input:focus {
           background-color: #ffffff;
@@ -269,11 +271,11 @@ export default function Login({ setLoggedIn }) {
         .login-btn {
           width: 100%;
           margin-top: 1rem;
-          padding: 0.75rem 1rem;
+          padding: 14px 16px;
           background-color: #2563eb;
           color: #ffffff;
           font-weight: 600;
-          font-size: 1rem;
+          font-size: 16px;
           border-radius: 0.5rem;
           border: none;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);

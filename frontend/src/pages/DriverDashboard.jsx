@@ -405,6 +405,7 @@ function DriverDashboard() {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          flex-wrap: wrap;
         }
 
         .logo {
@@ -445,9 +446,10 @@ function DriverDashboard() {
         }
 
         .main-content {
-          max-width: 500px;
+          width: 100%;
+          max-width: 520px;
           margin: 0 auto;
-          padding: 24px 16px;
+          padding: 16px;
         }
 
         .section-header {
@@ -505,6 +507,7 @@ function DriverDashboard() {
         .ride-request-card {
           background: white;
           border-radius: 16px;
+          padding-bottom: 4px;
           box-shadow: 0 2px 12px rgba(0,0,0,0.08);
           overflow: hidden;
         }
@@ -605,6 +608,7 @@ function DriverDashboard() {
           color: #333;
           line-height: 1.4;
           flex: 1;
+          word-break: break-word;
         }
 
         .route-line {
@@ -698,7 +702,7 @@ function DriverDashboard() {
         .swipe-slider {
           position: relative;
           width: 100%;
-          height: 56px;
+          height: 60px;
           background: #f5f5f5;
           border-radius: 28px;
           overflow: visible;
@@ -708,8 +712,8 @@ function DriverDashboard() {
           position: absolute;
           top: 4px;
           left: 4px;
-          width: 48px;
-          height: 48px;
+          width: 52px;
+          height: 52px;
           background: #000;
           border-radius: 24px;
           display: flex;
@@ -756,9 +760,17 @@ function DriverDashboard() {
           font-weight: 500;
         }
 
-        @media (max-width: 480px) {
-          .header {
-            padding: 12px 16px;
+          @media (max-width: 480px) {
+            .header-content {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 10px;
+            }
+
+            .header-right {
+              width: 100%;
+              justify-content: space-between;
+            }
           }
 
           .logo {
