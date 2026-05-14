@@ -7,10 +7,9 @@ const rideService = require("../services/rideService");
 */
 exports.bookRide = async (req, res) => {
   try {
-    // Only users can book rides
     if (req.user.role !== "user") {
       return res.status(403).json({
-        error: "Only users can book rides",
+        error: "Only users can book rides"
       });
     }
 
@@ -26,11 +25,10 @@ exports.bookRide = async (req, res) => {
       drop_off.trim() === ""
     ) {
       return res.status(400).json({
-        error: "Pickup and drop locations are required",
+        error: "Pickup and drop locations are required"
       });
     }
 
-    // Use provided distance/cost or defaults
     const dist = distance ? parseFloat(distance) : 10;
     const fare = cost ? parseFloat(cost) : 200;
 
@@ -44,14 +42,18 @@ exports.bookRide = async (req, res) => {
 
     res.json({
       message: "Ride booked successfully",
-      data: result,
+      data: result
     });
 
   } catch (err) {
     console.error("BOOK RIDE ERROR:", err);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
+
 
 /*
 ========================================
@@ -60,23 +62,27 @@ USER: GET RIDE STATUS
 */
 exports.getUserRideStatus = async (req, res) => {
   try {
-
     if (req.user.role !== "user") {
       return res.status(403).json({
-        error: "Only users can view ride status",
+        error: "Only users can view ride status"
       });
     }
 
     const user_id = req.user.id;
 
-    const result = await rideService.getUserRideStatus(user_id);
+    const result = await rideService.getUserRideStatus(
+      user_id
+    );
 
     res.json(result);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
+
 
 /*
 ========================================
@@ -85,21 +91,24 @@ exports.getUserRideStatus = async (req, res) => {
 */
 exports.getRequestedRides = async (req, res) => {
   try {
-    // Only drivers
     if (req.user.role !== "driver") {
       return res.status(403).json({
-        error: "Only drivers can view rides",
+        error: "Only drivers can view rides"
       });
     }
 
     const driver_id = req.user.id;
 
-    const rides = await rideService.getRequestedRides(driver_id);
+    const rides = await rideService.getRequestedRides(
+      driver_id
+    );
 
     res.json(rides);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
@@ -114,23 +123,30 @@ exports.acceptRide = async (req, res) => {
     const { ride_id } = req.body;
 
     if (!ride_id) {
-      return res.status(400).json({ error: "ride_id is required" });
+      return res.status(400).json({
+        error: "ride_id is required"
+      });
     }
 
     if (req.user.role !== "driver") {
       return res.status(403).json({
-        error: "Only drivers can accept rides",
+        error: "Only drivers can accept rides"
       });
     }
 
     const driver_id = req.user.id;
 
-    const result = await rideService.acceptRide(ride_id, driver_id);
+    const result = await rideService.acceptRide(
+      ride_id,
+      driver_id
+    );
 
     res.json(result);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
@@ -145,21 +161,27 @@ exports.completeRide = async (req, res) => {
     const { ride_id } = req.body;
 
     if (!ride_id) {
-      return res.status(400).json({ error: "ride_id is required" });
+      return res.status(400).json({
+        error: "ride_id is required"
+      });
     }
 
     if (req.user.role !== "driver") {
       return res.status(403).json({
-        error: "Only drivers can complete rides",
+        error: "Only drivers can complete rides"
       });
     }
 
-    const result = await rideService.completeRide(ride_id);
+    const result = await rideService.completeRide(
+      ride_id
+    );
 
     res.json(result);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
@@ -174,20 +196,26 @@ exports.cancelRide = async (req, res) => {
     const { ride_id } = req.body;
 
     if (!ride_id) {
-      return res.status(400).json({ error: "ride_id is required" });
+      return res.status(400).json({
+        error: "ride_id is required"
+      });
     }
 
     if (req.user.role !== "driver") {
       return res.status(403).json({
-        error: "Only drivers can cancel rides",
+        error: "Only drivers can cancel rides"
       });
     }
 
-    const result = await rideService.cancelRide(ride_id);
+    const result = await rideService.cancelRide(
+      ride_id
+    );
 
     res.json(result);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };

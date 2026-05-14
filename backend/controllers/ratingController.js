@@ -26,6 +26,10 @@ exports.submitRating = async (req, res) => {
     res.json(result);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("RATING ERROR:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
