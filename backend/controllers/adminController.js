@@ -1,283 +1,430 @@
 const db = require("../config/db");
 
 /*
-========================================
 1. GET ALL TABLES
-========================================
 */
 exports.getTables = async (req, res) => {
   try {
-    const [rows] = await db.query(`
-      SELECT TABLE_NAME
-      FROM INFORMATION_SCHEMA.TABLES
-      WHERE TABLE_SCHEMA = DATABASE()
+    const result = await db.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema='public'
+      ORDER BY table_name
     `);
-    res.json(rows);
+
+    res.json(result.rows);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
 /*
-========================================
 2. GET TABLE DATA
-========================================
 */
 exports.getTableData = async (req, res) => {
   try {
     const { name } = req.params;
     const limit = parseInt(req.query.limit) || 100;
 
-    console.log("GET TABLE DATA:", name, "limit:", limit);
+    console.log("GET TABLE DATA:", name);
 
-    // Whitelist check for safety
-    const [tables] = await db.query(`
-      SELECT TABLE_NAME
-      FROM INFORMATION_SCHEMA.TABLES
-      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-    `, [name]);
+    const allowedTables = [
+      "company_office",
+      "employee",
+      "manager",
+      "driver",
+      "techteam",
+      "vehicle",
+      "users",
+      "ride",
+      "payment",
+      "account",
+      "rating",
+      "auth_table"
+    ];
 
-    console.log("Table check result:", tables);
-
-    if (tables.length === 0) {
-      return res.status(404).json({ error: "Table not found" });
+    if (!allowedTables.includes(name)) {
+      return res.status(404).json({
+        error: "Table not found"
+      });
     }
 
-    const [rows] = await db.query(`SELECT * FROM \`${name}\` LIMIT ?`, [limit]);
-    console.log("Rows returned:", rows.length);
-    res.json(rows);
+    const result = await db.query(
+      `SELECT * FROM ${name} LIMIT $1`,
+      [limit]
+    );
+
+    console.log("Rows:", result.rows.length);
+
+    res.json(result.rows);
+
   } catch (err) {
-    console.error("GET TABLE DATA ERROR:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error(err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
+
 /*
-========================================
-3. EXECUTE RAW SQL QUERY
-========================================
+3. EXECUTE RAW QUERY
 */
 exports.executeQuery = async (req, res) => {
-  const connection = await db.getConnection();
+
+  const client = await db.connect();
 
   try {
+
     const { query } = req.body;
 
     if (!query || typeof query !== "string") {
-      return res.status(400).json({ error: "Query is required" });
+      return res.status(400).json({
+        error: "Query required"
+      });
     }
 
-    // Block dangerous operations in non-transaction mode
     const upperQuery = query.trim().toUpperCase();
-    const blockedPatterns = ["DROP DATABASE", "TRUNCATE", "DELETE FROM AUTH", "UPDATE AUTH"];
+
+    const blockedPatterns = [
+      "DROP DATABASE",
+      "TRUNCATE",
+      "DELETE FROM AUTH_TABLE",
+      "UPDATE AUTH_TABLE"
+    ];
 
     for (const pattern of blockedPatterns) {
+
       if (upperQuery.includes(pattern)) {
         return res.status(403).json({
-          error: `Operation blocked: ${pattern} is not allowed from admin panel`
+          error: `Blocked operation: ${pattern}`
         });
       }
+
     }
 
-    await connection.beginTransaction();
+    await client.query("BEGIN");
 
-    const [results] = await connection.query(query);
+    const result = await client.query(query);
 
-    await connection.commit();
+    await client.query("COMMIT");
 
-    // Return results based on query type
-    if (upperQuery.startsWith("SELECT") || upperQuery.startsWith("SHOW") || upperQuery.startsWith("DESCRIBE")) {
-      res.json({
+    if (
+      upperQuery.startsWith("SELECT")
+    ) {
+
+      return res.json({
         success: true,
-        data: results,
-        rowCount: results.length
+        data: result.rows,
+        rowCount: result.rowCount
       });
-    } else {
-      res.json({
-        success: true,
-        message: "Query executed successfully",
-        affectedRows: results.affectedRows
-      });
+
     }
+
+    return res.json({
+      success: true,
+      affectedRows: result.rowCount
+    });
 
   } catch (err) {
-    await connection.rollback();
+
+    await client.query("ROLLBACK");
+
     res.status(500).json({
-      error: err.message,
-      hint: "Transaction rolled back due to error"
+      error: err.message
     });
+
   } finally {
-    connection.release();
+
+    client.release();
+
   }
 };
 
-/*
-========================================
-4. TOGGLE DRIVER AVAILABILITY
-========================================
-*/
-exports.toggleDriverAvailability = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
 
-    if (!["available", "busy"].includes(status)) {
-      return res.status(400).json({ error: "Status must be 'available' or 'busy'" });
+/*
+4. TOGGLE DRIVER AVAILABILITY
+*/
+exports.toggleDriverAvailability = async (req,res)=>{
+
+  try{
+
+    const {id}=req.params;
+    const {status}=req.body;
+
+    if(
+      !["available","busy"].includes(status)
+    ){
+
+      return res.status(400).json({
+        error:"Invalid status"
+      });
+
     }
 
-    const [result] = await db.query(
-      "UPDATE DRIVER SET availability_status = ? WHERE driver_id = ?",
-      [status, id]
+    const result = await db.query(
+      `
+      UPDATE driver
+      SET availability_status=$1
+      WHERE driver_id=$2
+      `,
+      [status,id]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Driver not found" });
+    if(result.rowCount===0){
+
+      return res.status(404).json({
+        error:"Driver not found"
+      });
+
     }
 
     res.json({
-      message: `Driver ${id} marked as ${status}`,
-      driver_id: parseInt(id),
-      new_status: status
+      message:`Driver ${id} updated`,
+      driver_id:Number(id),
+      new_status:status
     });
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
+  catch(err){
+
+    res.status(500).json({
+      error:err.message
+    });
+
+  }
+
 };
 
+
 /*
-========================================
-5. GET ALL USERS WITH BALANCE
-========================================
+5. GET USERS
 */
-exports.getUsers = async (req, res) => {
-  try {
-    const [rows] = await db.query(`
-      SELECT u.user_id,
-             CONCAT_WS(' ', u.fname, u.lname) AS name,
-             u.fname,
-             u.lname,
-             u.email_phn AS email,
-             COALESCE(
-               (SELECT a1.balance
-                FROM ACCOUNT a1
-                WHERE a1.entity_id = u.user_id
-                  AND a1.entity_type = 'user'
-                ORDER BY a1.account_id DESC
-                LIMIT 1),
-               0
-             ) AS balance
-      FROM USER u
-      ORDER BY u.user_id
-    `);
-    res.json(rows);
-  } catch (err) {
-    console.error("GET USERS ERROR:", err.message);
-    res.status(500).json({ error: err.message });
-  }
+exports.getUsers = async(req,res)=>{
+
+try{
+
+const result=await db.query(`
+
+SELECT
+u.user_id,
+CONCAT_WS(' ',u.fname,u.lname) AS name,
+u.fname,
+u.lname,
+u.email_phn AS email,
+
+COALESCE(
+
+(
+SELECT balance
+FROM account a
+WHERE a.entity_id=u.user_id
+AND a.entity_type='user'
+ORDER BY account_id DESC
+LIMIT 1
+),
+0
+
+) AS balance
+
+FROM users u
+ORDER BY u.user_id
+
+`);
+
+res.json(result.rows);
+
+}
+catch(err){
+
+res.status(500).json({
+error:err.message
+});
+
+}
+
 };
 
+
+
 /*
-========================================
 6. UPDATE USER BALANCE
-========================================
 */
-exports.updateUserBalance = async (req, res) => {
-  const connection = await db.getConnection();
+exports.updateUserBalance = async(req,res)=>{
 
-  try {
-    const user_id = parseInt(req.params.id);
-    const { balance } = req.body;
+const client=await db.connect();
 
-    if (balance === undefined) {
-      return res.status(400).json({ error: "user_id and balance required" });
-    }
+try{
 
-    if (balance < 0) {
-      return res.status(400).json({ error: "Balance cannot be negative" });
-    }
+const user_id=parseInt(req.params.id);
 
-    await connection.beginTransaction();
+const {balance}=req.body;
 
-    // Check if user exists
-    const [users] = await connection.query(
-      "SELECT user_id, fname, lname FROM USER WHERE user_id = ?",
-      [user_id]
-    );
+await client.query("BEGIN");
 
-    if (users.length === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
+const userResult=await client.query(
+`
+SELECT *
+FROM users
+WHERE user_id=$1
+`,
+[user_id]
+);
 
-    const user = users[0];
+if(userResult.rows.length===0){
 
-    // Get the LATEST account entry (highest account_id)
-    const [[latestAccount]] = await connection.query(
-      `SELECT account_id, balance FROM ACCOUNT
-       WHERE entity_id = ? AND entity_type = 'user'
-       ORDER BY account_id DESC
-       LIMIT 1`,
-      [user_id]
-    );
+return res.status(404).json({
+error:"User not found"
+});
 
-    if (latestAccount) {
-      // Update the latest account entry
-      const oldBalance = latestAccount.balance;
-      await connection.query(
-        `UPDATE ACCOUNT SET balance = ?
-         WHERE account_id = ?`,
-        [balance, latestAccount.account_id]
-      );
-      res.json({
-        message: `Balance updated for ${user.fname} ${user.lname}`,
-        user_id,
-        old_balance: oldBalance,
-        new_balance: balance,
-        change: balance - oldBalance
-      });
-    } else {
-      // Create new account
-      await connection.query(
-        "INSERT INTO ACCOUNT (entity_id, entity_type, balance) VALUES (?, 'user', ?)",
-        [user_id, balance]
-      );
-      res.json({
-        message: `Account created for ${user.fname} ${user.lname}`,
-        user_id,
-        new_balance: balance
-      });
-    }
+}
 
-    await connection.commit();
+const user=userResult.rows[0];
 
-  } catch (err) {
-    await connection.rollback();
-    res.status(500).json({ error: err.message });
-  } finally {
-    connection.release();
-  }
+const accountResult=await client.query(
+`
+SELECT account_id,balance
+FROM account
+WHERE entity_id=$1
+AND entity_type='user'
+ORDER BY account_id DESC
+LIMIT 1
+`,
+[user_id]
+);
+
+if(accountResult.rows.length>0){
+
+const latest=accountResult.rows[0];
+
+await client.query(
+`
+UPDATE account
+SET balance=$1
+WHERE account_id=$2
+`,
+[
+balance,
+latest.account_id
+]
+);
+
+res.json({
+
+message:"Balance updated",
+
+user_id,
+
+old_balance:latest.balance,
+
+new_balance:balance
+
+});
+
+}
+else{
+
+await client.query(
+`
+INSERT INTO account
+(
+entity_id,
+entity_type,
+balance
+)
+VALUES
+(
+$1,
+'user',
+$2
+)
+`,
+[
+user_id,
+balance
+]
+);
+
+res.json({
+
+message:"Account created",
+
+user_id,
+
+new_balance:balance
+
+});
+
+}
+
+await client.query("COMMIT");
+
+}
+catch(err){
+
+await client.query("ROLLBACK");
+
+res.status(500).json({
+error:err.message
+});
+
+}
+finally{
+
+client.release();
+
+}
+
 };
 
+
+
 /*
-========================================
-7. GET DATABASE STATS
-========================================
+7. DATABASE STATS
 */
-exports.getDatabaseStats = async (req, res) => {
-  try {
-    const stats = {};
+exports.getDatabaseStats=async(req,res)=>{
 
-    // Count records in each table
-    const tables = ["USER", "DRIVER", "EMPLOYEE", "RIDE", "PAYMENT", "ACCOUNT", "RATING", "AUTH", "VEHICLE", "MANAGER", "TECHTEAM", "COMPANY_OFFICE"];
+try{
 
-    for (const table of tables) {
-      const [[result]] = await db.query(`SELECT COUNT(*) as count FROM ${table}`);
-      stats[table] = result.count;
-    }
+const stats={};
 
-    res.json(stats);
+const tables=[
+"users",
+"driver",
+"employee",
+"ride",
+"payment",
+"account",
+"rating",
+"auth_table",
+"vehicle",
+"manager",
+"techteam",
+"company_office"
+];
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+for(const table of tables){
+
+const result=await db.query(
+`SELECT COUNT(*) AS count FROM ${table}`
+);
+
+stats[table]=result.rows[0].count;
+
+}
+
+res.json(stats);
+
+}
+catch(err){
+
+res.status(500).json({
+error:err.message
+});
+
+}
+
 };
