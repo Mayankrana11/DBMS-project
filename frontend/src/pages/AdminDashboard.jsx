@@ -147,7 +147,7 @@ function AdminDashboard({ setLoggedIn }) {
 
   const handleEditUserBalance = (user) => {
     setEditingUser(user.user_id);
-    setNewBalance(user.balance || 0);
+    setNewBalance(Number(user.balance) || 0);
   };
 
   const handleUpdateBalance = async (userId) => {
@@ -409,7 +409,7 @@ function AdminDashboard({ setLoggedIn }) {
               <tr key={user.user_id}>
                 <td style={styles.td}>{user.user_id}</td>
                 <td style={styles.td}>{user.name || `${user.fname} ${user.lname}`}</td>
-                <td style={styles.td}>{user.email}</td>
+                <td style={styles.td}>{user.email_phn}</td>
                 <td style={styles.td}>
                   {editingUser === user.user_id ? (
                     <input
@@ -419,7 +419,7 @@ function AdminDashboard({ setLoggedIn }) {
                       onChange={(e) => setNewBalance(parseFloat(e.target.value) || 0)}
                     />
                   ) : (
-                    <span>₹{user.balance}</span>
+                    <span>₹{Number(user.balance || 0)}</span>
                   )}
                 </td>
                 <td style={styles.td}>

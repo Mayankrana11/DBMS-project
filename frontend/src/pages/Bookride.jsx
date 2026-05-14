@@ -224,7 +224,7 @@ function BookRide() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setBalance(data.balance);
+      setBalance(Number(data.balance) || 0);
     } catch (err) {
       console.error("BALANCE ERROR:", err);
     }
@@ -423,7 +423,7 @@ function BookRide() {
           {currentRide &&
             currentRide.ride_status === "completed" &&
             currentRide.driver_id &&
-            currentRide.already_rated === 0 && (
+            !currentRide.already_rated && (
               <div className="rating-panel">
                 <h3>Rate your driver</h3>
                 <div className="star-rating">
