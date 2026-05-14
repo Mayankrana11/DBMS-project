@@ -2,158 +2,273 @@ const db = require("../config/db");
 
 /*
 ========================================
-1. USER BOOK RIDE (requested state)
+1. USER BOOK RIDE
 ========================================
 */
-exports.createRide = async (pickup, drop_off, user_id, distance = 10, cost = 200) => {
-  const connection = await db.getConnection();
+exports.createRide = async (
+  pickup,
+  drop_off,
+  user_id,
+  distance = 10,
+  cost = 200
+) => {
+
+  const client = await db.connect();
 
   try {
-    await connection.beginTransaction();
 
-    // 🔥 FIX 3: CHECK IF USER EXISTS
-    const [users] = await connection.query(
-      "SELECT * FROM USER WHERE user_id = ?",
+    await client.query("BEGIN");
+
+    const userResult = await client.query(
+      "SELECT * FROM users WHERE user_id=$1",
       [user_id]
     );
 
-    if (users.length === 0) {
+    if (userResult.rows.length === 0) {
       throw new Error("Invalid user_id");
     }
 
-    // Check wallet balance (latest entry)
-    const [[wallet]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1",
+    let walletResult = await client.query(
+      `
+      SELECT balance
+      FROM account
+      WHERE entity_id=$1
+      AND entity_type='user'
+      ORDER BY account_id DESC
+      LIMIT 1
+      `,
       [user_id]
     );
 
-    // Create wallet if missing (with 0 balance, not 1000)
-    if (!wallet) {
-      await connection.query(
-        "INSERT INTO ACCOUNT(entity_id, entity_type, balance) VALUES (?, 'user', 0)",
+    if (walletResult.rows.length === 0) {
+
+      await client.query(
+        `
+        INSERT INTO account
+        (entity_id,entity_type,balance)
+        VALUES($1,'user',0)
+        `,
+        [user_id]
+      );
+
+      walletResult = await client.query(
+        `
+        SELECT balance
+        FROM account
+        WHERE entity_id=$1
+        AND entity_type='user'
+        ORDER BY account_id DESC
+        LIMIT 1
+        `,
         [user_id]
       );
     }
 
-    // Fetch balance again (latest entry)
-    const [[walletCheck]] = await connection.query(
-      "SELECT balance FROM ACCOUNT WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1",
-      [user_id]
-    );
+    const wallet = walletResult.rows[0];
 
-    if (walletCheck.balance < cost) {
-      throw new Error("Insufficient wallet balance to book ride");
+    if (wallet.balance < cost) {
+      throw new Error(
+        "Insufficient wallet balance"
+      );
     }
 
-    // Insert ride (requested, no driver yet)
-    await connection.query(
-      `INSERT INTO RIDE
-      (ride_status, pickup, current_location, drop_off, dist_km, fare_amt, user_id, driver_id)
-      VALUES ('requested', ?, ?, ?, ?, ?, ?, NULL)`,
-      [pickup, pickup, drop_off, distance, cost, user_id]
+    const rideResult = await client.query(
+      `
+      INSERT INTO ride
+      (
+        ride_status,
+        pickup,
+        current_location,
+        drop_off,
+        dist_km,
+        fare_amt,
+        user_id,
+        driver_id
+      )
+      VALUES
+      (
+        'requested',
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        NULL
+      )
+      RETURNING ride_id
+      `,
+      [
+        pickup,
+        pickup,
+        drop_off,
+        distance,
+        cost,
+        user_id
+      ]
     );
 
-    const [[ride]] = await connection.query(
-      "SELECT LAST_INSERT_ID() AS ride_id"
-    );
+    const ride_id =
+      rideResult.rows[0].ride_id;
 
-    const ride_id = ride.ride_id;
-
-    await connection.commit();
+    await client.query("COMMIT");
 
     return {
       ride_id,
       user_id,
       distance,
       cost,
-      message: "Ride requested, waiting for driver"
+      message:
+        "Ride requested, waiting for driver"
     };
 
   } catch (err) {
-    await connection.rollback();
+
+    await client.query(
+      "ROLLBACK"
+    );
+
     throw err;
+
   } finally {
-    connection.release();
+
+    client.release();
+
   }
 };
 
 
+
 /*
 ========================================
-2. DRIVER: VIEW REQUESTED RIDES
+2. DRIVER VIEW REQUESTED RIDES
 ========================================
 */
-exports.getRequestedRides = async (driver_id) => {
-  const [rows] = await db.query(
-    `SELECT r.*, u.fname, u.lname, d.rating_avg
-     FROM RIDE r
-     JOIN USER u ON r.user_id = u.user_id
-     LEFT JOIN DRIVER d ON r.driver_id = d.driver_id
-     WHERE 
-        (
-          r.ride_status = 'requested'
-          AND EXISTS (
-            SELECT 1 FROM DRIVER d
-            WHERE d.driver_id = ? AND d.availability_status = 'available'
-          )
-        )
-        OR
-        (
-          r.ride_status = 'ongoing'
-          AND r.driver_id = ?
-        )`,
-    [driver_id, driver_id]
+exports.getRequestedRides = async (
+  driver_id
+) => {
+
+  const result = await db.query(
+    `
+    SELECT
+      r.*,
+      u.fname,
+      u.lname,
+      d.rating_avg
+    FROM ride r
+    JOIN users u
+    ON r.user_id=u.user_id
+
+    LEFT JOIN driver d
+    ON r.driver_id=d.driver_id
+
+    WHERE
+    (
+      r.ride_status='requested'
+      AND EXISTS(
+      SELECT 1
+      FROM driver
+      WHERE driver_id=$1
+      AND availability_status='available'
+      )
+    )
+    OR
+    (
+      r.ride_status='ongoing'
+      AND r.driver_id=$2
+    )
+    `,
+    [
+      driver_id,
+      driver_id
+    ]
   );
 
-  return rows;
+  return result.rows;
+
 };
 
 
+
 /*
 ========================================
-3. DRIVER: ACCEPT RIDE
+3. ACCEPT RIDE
 ========================================
 */
-exports.acceptRide = async (ride_id, driver_id) => {
-  const connection = await db.getConnection();
+exports.acceptRide = async (
+  ride_id,
+  driver_id
+) => {
+
+  const client = await db.connect();
 
   try {
-    await connection.beginTransaction();
 
-    // 🔥 CHECK DRIVER AVAILABILITY (ADD HERE)
-    const [driver] = await connection.query(
-      "SELECT availability_status FROM DRIVER WHERE driver_id=?",
+    await client.query("BEGIN");
+
+    const driverResult =
+      await client.query(
+        `
+SELECT availability_status
+FROM driver
+WHERE driver_id=$1
+`,
+        [driver_id]
+      );
+
+    if (
+      driverResult.rows.length === 0
+    ) {
+      throw new Error(
+        "Driver not found"
+      );
+    }
+
+    const driver =
+      driverResult.rows[0];
+
+    if (
+      driver.availability_status !== "available"
+    ) {
+      throw new Error(
+        "Driver busy"
+      );
+    }
+
+    const updateResult =
+      await client.query(
+        `
+UPDATE ride
+SET
+driver_id=$1,
+ride_status='ongoing'
+WHERE ride_id=$2
+AND ride_status='requested'
+`,
+        [
+          driver_id,
+          ride_id
+        ]
+      );
+
+    if (
+      updateResult.rowCount === 0
+    ) {
+      throw new Error(
+        "Ride already accepted"
+      );
+    }
+
+    await client.query(
+      `
+UPDATE driver
+SET availability_status='busy'
+WHERE driver_id=$1
+`,
       [driver_id]
     );
 
-    if (driver.length === 0) {
-      throw new Error("Driver not found");
-    }
-
-    if (driver[0].availability_status !== "available") {
-      throw new Error("Driver is already busy");
-    }
-
-    // Assign driver + start ride
-    const [result] = await connection.query(
-      `UPDATE RIDE 
-      SET driver_id = ?, ride_status = 'ongoing'
-      WHERE ride_id = ? AND ride_status = 'requested'`,
-      [driver_id, ride_id]
-    );
-
-    // If no rows updated → someone already accepted
-    if (result.affectedRows === 0) {
-      throw new Error("Ride already accepted by another driver");
-    }
-
-    // 🔥 Mark driver busy
-    await connection.query(
-      `UPDATE DRIVER SET availability_status='busy' WHERE driver_id=?`,
-      [driver_id]
-    );
-
-    await connection.commit();
+    await client.query("COMMIT");
 
     return {
       message: "Ride accepted",
@@ -161,211 +276,211 @@ exports.acceptRide = async (ride_id, driver_id) => {
       driver_id
     };
 
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
   }
+  catch (err) {
+
+    await client.query(
+      "ROLLBACK"
+    );
+
+    throw err;
+
+  }
+  finally {
+
+    client.release();
+
+  }
+
 };
+
 
 
 /*
 ========================================
-4. DRIVER: COMPLETE RIDE (TRIGGERS DEMO)
+4. COMPLETE RIDE
 ========================================
 */
-exports.completeRide = async (ride_id) => {
-  const connection = await db.getConnection();
+exports.completeRide = async (
+  ride_id
+) => {
+
+  const client = await db.connect();
 
   try {
-    await connection.beginTransaction();
 
-    // Complete ride
-    await connection.query(
-      `UPDATE RIDE
-      SET ride_status = 'completed', current_location = drop_off
-      WHERE ride_id = ?`,
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+UPDATE ride
+SET
+ride_status='completed',
+current_location=drop_off
+WHERE ride_id=$1
+`,
       [ride_id]
     );
 
-    // Fetch ride data
-    const [[ride]] = await connection.query(
-      "SELECT user_id, driver_id, fare_amt FROM RIDE WHERE ride_id=?",
+    const rideResult =
+      await client.query(
+        `
+SELECT *
+FROM ride
+WHERE ride_id=$1
+`,
+        [ride_id]
+      );
+
+    const ride =
+      rideResult.rows[0];
+
+    await client.query(
+      `
+UPDATE payment
+SET payment_status='success'
+WHERE ride_id=$1
+`,
       [ride_id]
     );
 
-    const [[driver]] = await connection.query(
-      `SELECT * FROM DRIVER WHERE driver_id=?`,
-      [ride.driver_id]
+    await client.query(
+      "COMMIT"
     );
-
-    const fare = ride.fare_amt;
-    const user_id = ride.user_id;
-    const driver_id = ride.driver_id;
-
-    // Ensure wallets exist (create with 0 balance if missing, don't overwrite existing)
-    await connection.query(
-      "INSERT INTO ACCOUNT(entity_id, entity_type, balance) SELECT ?, 'user', 0 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM ACCOUNT WHERE entity_id=? AND entity_type='user')",
-      [user_id, user_id]
-    );
-
-    await connection.query(
-      "INSERT INTO ACCOUNT(entity_id, entity_type, balance) SELECT ?, 'driver', 0 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM ACCOUNT WHERE entity_id=? AND entity_type='driver')",
-      [driver_id, driver_id]
-    );
-
-    // Deduct from user's latest account entry
-    const [[userAccount]] = await connection.query(
-      `SELECT account_id FROM ACCOUNT
-      WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1`,
-      [user_id]
-    );
-    await connection.query(
-      `UPDATE ACCOUNT
-      SET balance = balance - ?
-      WHERE account_id = ?`,
-      [fare, userAccount.account_id]
-    );
-
-    // Add to driver's latest account entry
-    const [[driverAccount]] = await connection.query(
-      `SELECT account_id FROM ACCOUNT
-      WHERE entity_id=? AND entity_type='driver' ORDER BY account_id DESC LIMIT 1`,
-      [driver_id]
-    );
-    await connection.query(
-      `UPDATE ACCOUNT
-      SET balance = balance + ?
-      WHERE account_id = ?`,
-      [fare, driverAccount.account_id]
-    );
-
-    // Mark payment success
-    await connection.query(
-      "UPDATE PAYMENT SET payment_status='success' WHERE ride_id=?",
-      [ride_id]
-    );
-
-    // Fetch final account balance
-    const [[account]] = await connection.query(
-      `SELECT * FROM ACCOUNT
-      WHERE entity_id=? AND entity_type='user' ORDER BY account_id DESC LIMIT 1`,
-      [ride.user_id]
-    );
-    const [[payment]] = await connection.query(
-      "SELECT payment_status, amount FROM PAYMENT WHERE ride_id=?",
-      [ride_id]
-    );
-
-    await connection.commit();
 
     return {
-      message: "Ride completed successfully",
+      message:
+        "Ride completed successfully",
 
-      ride: {
-        ride_id: ride.ride_id,
-        ride_status: ride.ride_status
-      },
-
-      driver: {
-        driver_id: driver.driver_id,
-        availability_status: driver.availability_status
-      },
-
-      payment: {
-        payment_status: payment.payment_status,
-        amount: payment.amount
-      },
-
-      account: {
-        user_id: account.user_id,
-        updated_balance: account.balance
-      },
-
-      trigger_info:
-        "Driver availability & account balance updated via triggers"
+      ride
     };
 
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
   }
+  catch (err) {
+
+    await client.query(
+      "ROLLBACK"
+    );
+
+    throw err;
+
+  }
+  finally {
+
+    client.release();
+
+  }
+
 };
+
 
 
 /*
 ========================================
-5. DRIVER: CANCEL RIDE
+5. CANCEL RIDE
 ========================================
 */
-exports.cancelRide = async (ride_id) => {
-  const connection = await db.getConnection();
+exports.cancelRide = async (
+  ride_id
+) => {
+
+  const client = await db.connect();
 
   try {
-    await connection.beginTransaction();
 
-    await connection.query(
-      `UPDATE RIDE SET ride_status='cancelled' WHERE ride_id=?`,
+    await client.query(
+      "BEGIN"
+    );
+
+    await client.query(
+      `
+UPDATE ride
+SET ride_status='cancelled'
+WHERE ride_id=$1
+`,
       [ride_id]
     );
 
-    await connection.query(
-      `UPDATE PAYMENT SET payment_status='failed' WHERE ride_id=?`,
+    await client.query(
+      `
+UPDATE payment
+SET payment_status='failed'
+WHERE ride_id=$1
+`,
       [ride_id]
     );
 
-    await connection.commit();
+    await client.query(
+      "COMMIT"
+    );
 
     return {
       message: "Ride cancelled"
     };
 
-  } catch (err) {
-    await connection.rollback();
-    throw err;
-  } finally {
-    connection.release();
   }
+  catch (err) {
+
+    await client.query(
+      "ROLLBACK"
+    );
+
+    throw err;
+
+  }
+  finally {
+
+    client.release();
+
+  }
+
 };
+
+
 
 /*
 ========================================
-6. USER: GET RIDE STATUS
+6. GET USER RIDE STATUS
 ========================================
 */
-exports.getUserRideStatus = async (user_id) => {
+exports.getUserRideStatus =
+  async (user_id) => {
 
-  const [rows] = await db.query(
-    `SELECT 
-        r.ride_id,
-        r.ride_status,
-        r.driver_id,
-        d.rating_avg,
+    const result =
+      await db.query(
 
-        EXISTS (
-            SELECT 1
-            FROM RATING ra
-            WHERE ra.ride_id = r.ride_id
-            AND ra.user_id = ?
-        ) AS already_rated
+        `
+SELECT
+r.ride_id,
+r.ride_status,
+r.driver_id,
+d.rating_avg,
 
-     FROM RIDE r
-     LEFT JOIN DRIVER d 
-     ON r.driver_id = d.driver_id
+EXISTS(
+SELECT 1
+FROM rating ra
+WHERE ra.ride_id=r.ride_id
+AND ra.user_id=$1
+)
+AS already_rated
 
-     WHERE r.user_id = ?
+FROM ride r
 
-     ORDER BY r.ride_id DESC
-     LIMIT 1`,
-    [user_id, user_id]
-  );
+LEFT JOIN driver d
+ON r.driver_id=d.driver_id
 
-  if (rows.length === 0) {
-    return null;
-  }
+WHERE r.user_id=$2
 
-  return rows[0];
-};
+ORDER BY r.ride_id DESC
+LIMIT 1
+`,
+        [
+          user_id,
+          user_id
+        ]
+
+      );
+
+    return result.rows[0] || null;
+
+  };
